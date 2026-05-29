@@ -4,239 +4,138 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>WhaleWatch · Trade Genius</title>
+<title>WhaleWatch · Trade Supercomputer</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#0a0a0f;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;padding:0}
+  body{background:#0a0a0f;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;padding:20px}
+  .container{max-width:800px;margin:0 auto}
   .card{background:#16161f;border:1px solid #1e1e2e;border-radius:12px;padding:16px;margin-bottom:12px}
-  .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
-  .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;background:#ffffff10}
-  .flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .between{display:flex;justify-content:space-between;align-items:center}
+  .ticker{font-family:monospace;font-weight:700;font-size:18px;color:#00ff88}
+  .rating{display:inline-block;padding:2px 12px;border-radius:20px;font-size:11px;font-weight:700}
+  .rating-top{background:#ff446620;border:1px solid #ff446660;color:#ff4466}
+  .rating-good{background:#00ff8820;border:1px solid #00ff8860;color:#00ff88}
+  .rating-small{background:#ffaa0020;border:1px solid #ffaa0060;color:#ffaa00}
+  .rating-avoid{background:#ffffff08;border:1px solid #ffffff18;color:#64748b}
+  .flex{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+  .gap{gap:12px}
   .mt-2{margin-top:8px}
   .mb-2{margin-bottom:8px}
+  .text-muted{color:#64748b;font-size:12px}
   .text-accent{color:#00ff88}
-  .text-muted{color:#64748b}
-  .text-small{font-size:11px}
-  button{background:transparent;border:1px solid #1e1e2e;color:#e2e8f0;padding:8px 16px;border-radius:8px;cursor:pointer}
-  button.active{background:#00ff8820;border-color:#00ff8860;color:#00ff88}
-  .hidden{display:none}
+  input,button{background:#1e1e2e;border:1px solid #2a2a3a;color:#e2e8f0;padding:10px 16px;border-radius:8px;font-size:14px}
+  button{background:#00ff8820;border-color:#00ff8860;color:#00ff88;cursor:pointer}
+  .loading{opacity:0.6;pointer-events:none}
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div class="container">
+  <div class="flex" style="margin-bottom:24px;border-bottom:1px solid #1e1e2e;padding-bottom:16px">
+    <div class="flex gap" style="align-items:center">
+      <div style="width:8px;height:8px;border-radius:50%;background:#00ff88"></div>
+      <span style="font-family:monospace;font-weight:700;font-size:20px">WHALE<span style="color:#00ff88">WATCH</span></span>
+      <span style="background:#00ff8820;border:1px solid #00ff8860;color:#00ff88;padding:2px 10px;border-radius:20px;font-size:10px">TRADE SUPERCOMPUTER</span>
+    </div>
+    <div class="text-muted" id="timestamp">--</div>
+  </div>
+
+  <div style="background:#1e1e2e;border-radius:12px;padding:16px;margin-bottom:20px">
+    <div class="flex gap" style="margin-bottom:12px">
+      <input type="text" id="tickerInput" placeholder="Enter ticker (e.g., NVDA, TSLA, LMT)" style="flex:1">
+      <button id="fetchBtn">🔍 Get Signal</button>
+    </div>
+    <div class="text-muted" style="font-size:12px">Powered by Wilson score confidence intervals · Live from your own backend</div>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="text-muted" style="text-align:center;margin-top:32px;padding-top:16px;border-top:1px solid #1e1e2e;font-size:10px">
+    ⚠️ NOT financial advice · Simulated returns · SEC filing delay: 30-45 days<br>
+    🐋 WhaleWatch Trade Supercomputer · Backend on Render · Wilson score 95% CI
+  </div>
+</div>
+
 <script>
 // ============================================================
-// WHALEWATCH TRADE GENIUS - FULLY FUNCTIONAL
+// YOUR LIVE BACKEND URL — UPDATE THIS TO YOUR RENDER URL
+// ============================================================
+const API_BASE = "https://whalewatch-l3ut.onrender.com";
+
+// ============================================================
+// Everything below works automatically
 // ============================================================
 
-// ----- DATA -----
-const HISTORICAL = [
-  {ticker:"NVDA", correct:4, total:4, avgExcess:0.35, maxDrawdown:-0.05, bestTrade:0.67},
-  {ticker:"TSM", correct:2, total:3, avgExcess:0.18, maxDrawdown:-0.08, bestTrade:0.37},
-  {ticker:"LMT", correct:6, total:6, avgExcess:0.22, maxDrawdown:-0.02, bestTrade:0.31},
-  {ticker:"AVGO", correct:2, total:3, avgExcess:0.15, maxDrawdown:-0.05, bestTrade:0.41},
-  {ticker:"NU", correct:3, total:3, avgExcess:0.42, maxDrawdown:0, bestTrade:0.58},
-  {ticker:"BABA", correct:3, total:4, avgExcess:0.19, maxDrawdown:-0.12, bestTrade:0.38},
-  {ticker:"0700.HK", correct:2, total:3, avgExcess:0.16, maxDrawdown:-0.09, bestTrade:0.32},
-  {ticker:"XRO", correct:2, total:2, avgExcess:0.31, maxDrawdown:0, bestTrade:0.44},
-  {ticker:"WDS", correct:1, total:2, avgExcess:0.14, maxDrawdown:-0.07, bestTrade:0.34},
-  {ticker:"NOVO-B", correct:2, total:2, avgExcess:0.22, maxDrawdown:0, bestTrade:0.31}
-];
-
-const TOP10 = [
-  {rank:1, ticker:"NVDA", return:"+67%", risk:"Medium", sector:"Semiconductors", why:"Rep. McCaul bought ahead of chip export liberalization. 4/4 profitable.", traders:["Rep. McCaul","Druckenmiller"]},
-  {rank:2, ticker:"TSM", return:"+37%", risk:"Medium", sector:"Semiconductors", why:"Light Street's largest position at 14.4% of portfolio.", traders:["Light Street Capital"]},
-  {rank:3, ticker:"0700.HK", return:"+32%", risk:"Medium", sector:"Social Media", why:"LegCo member Jeffrey Lam + Value Partners adding HK$1.4B.", traders:["Jeffrey Lam","Value Partners"]},
-  {rank:4, ticker:"NU", return:"+58%", risk:"Medium-High", sector:"Fintech", why:"71% of Tiger Cubs now hold NU — rare consensus.", traders:["Maverick Capital","Tiger Cubs"]},
-  {rank:5, ticker:"LMT", return:"+29%", risk:"Low", sector:"Defense", why:"Sen. Tuberville bought ahead of appropriations vote — 6/6 pattern.", traders:["Sen. Tuberville"]},
-  {rank:6, ticker:"NOVO-B", return:"+31%", risk:"Low", sector:"Pharma", why:"TCI's Chris Hohn added €1.2B — highest conviction.", traders:["TCI Fund"]},
-  {rank:7, ticker:"BABA", return:"+38%", risk:"Medium-High", sector:"E-commerce", why:"Hillhouse returning after 2021 exit — 4/4 record.", traders:["Hillhouse Capital"]},
-  {rank:8, ticker:"WDS", return:"+34%", risk:"Medium-High", sector:"LNG", why:"Regal Funds — Australia's top hedge fund — new position.", traders:["Regal Funds"]},
-  {rank:9, ticker:"AVGO", return:"+41%", risk:"Medium", sector:"AI Silicon", why:"Druckenmiller new position after cutting tech to lows.", traders:["Duquesne"]},
-  {rank:10, ticker:"XRO", return:"+44%", risk:"Medium", sector:"SaaS", why:"Hyperion added with high conviction.", traders:["Hyperion AM"]}
-];
-
-// ----- WILSON SCORE (Genius Rating) -----
-function wilsonLower(winRate, n) {
-  if (n === 0) return 0;
-  const p = winRate / 100;
-  const z = 1.96;
-  const lower = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p) + z*z/(4*n))/n)) / (1 + z*z/n);
-  return Math.max(0, lower) * 100;
+async function fetchSignal(ticker) {
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = '<div class="card" style="text-align:center"><div class="loading">🔄 Fetching supercomputer analysis...</div></div>';
+  
+  try {
+    const response = await fetch(`${API_BASE}/v1/signal/${ticker.toUpperCase()}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    displaySignal(data);
+  } catch (error) {
+    resultDiv.innerHTML = `<div class="card" style="border-left:3px solid #ff4466">
+      <div style="color:#ff4466;font-weight:700">⚠️ Error</div>
+      <div class="text-muted mt-2">${error.message}</div>
+      <div class="text-muted mt-2">Make sure your Render backend is running at ${API_BASE}</div>
+    </div>`;
+  }
 }
 
-function getRating(winRate, n, maxDD = null) {
-  const adj = wilsonLower(winRate, n);
-  let score = adj >= 75 ? 5 : adj >= 65 ? 4 : adj >= 55 ? 3 : adj >= 50 ? 2 : 1;
-  if (n >= 20) score += 1.2;
-  else if (n >= 10) score += 0.6;
-  if (maxDD && maxDD < -0.15) score -= 1;
-  if (score >= 6) return { label:"🔥 TOP", color:"#ff4466", bg:"#ff446620", pct:5 };
-  if (score >= 4.5) return { label:"✅ GOOD", color:"#00ff88", bg:"#00ff8820", pct:2.5 };
-  if (score >= 3) return { label:"⚠️ SMALL", color:"#ffaa00", bg:"#ffaa0020", pct:1 };
-  return { label:"❌ AVOID", color:"#64748b", bg:"#ffffff08", pct:0 };
-}
-
-// ----- HELPERS -----
-function getStats(ticker) {
-  return HISTORICAL.find(h => h.ticker === ticker);
-}
-
-// ----- RENDER -----
-let activeTab = 'top10';
-
-function render() {
-  const root = document.getElementById('root');
-  if (!root) return;
+function displaySignal(data) {
+  const ratingClass = data.genius_rating === '🔥 TOP' ? 'rating-top' :
+                      data.genius_rating === '✅ GOOD' ? 'rating-good' :
+                      data.genius_rating === '⚠️ SMALL' ? 'rating-small' : 'rating-avoid';
   
   const html = `
-    <div style="max-width:720px;margin:0 auto;padding:16px">
-      <div class="between" style="margin-bottom:20px;border-bottom:1px solid #1e1e2e;padding-bottom:12px">
-        <div class="flex">
-          <div style="width:8px;height:8px;border-radius:50%;background:#00ff88"></div>
-          <span style="font-family:monospace;font-weight:700;font-size:20px">WHALE<span style="color:#00ff88">WATCH</span></span>
-          <span class="badge" style="background:#00ff8820;color:#00ff88;padding:2px 10px">TRADE GENIUS</span>
+    <div class="card" style="border-left:3px solid ${data.genius_rating === '🔥 TOP' ? '#ff4466' : '#00ff88'}">
+      <div class="flex">
+        <div>
+          <span class="ticker">${data.ticker}</span>
+          <div class="rating ${ratingClass}" style="margin-top:8px">${data.genius_rating}</div>
         </div>
-        <span class="text-muted text-small">${new Date().toLocaleDateString()}</span>
+        <div style="text-align:right">
+          <div style="font-size:28px;font-weight:700;color:#00ff88">${data.position_pct}%</div>
+          <div class="text-muted">position size</div>
+        </div>
       </div>
       
-      <div class="flex" style="margin-bottom:20px">
-        <button class="${activeTab === 'top10' ? 'active' : ''}" onclick="setTab('top10')">🏆 Top 10</button>
-        <button class="${activeTab === 'backtest' ? 'active' : ''}" onclick="setTab('backtest')">📊 Backtest</button>
-        <button class="${activeTab === 'contracts' ? 'active' : ''}" onclick="setTab('contracts')">🤝 Contracts</button>
+      <div class="flex" style="margin-top:16px;gap:16px;flex-wrap:wrap">
+        <div><span class="text-muted">Win rate</span><br><span class="text-accent" style="font-size:20px">${data.win_rate}%</span></div>
+        <div><span class="text-muted">Trades</span><br><span class="text-accent" style="font-size:20px">${data.total_trades}</span></div>
+        <div><span class="text-muted">Excess vs SPY</span><br><span class="text-accent" style="font-size:20px">+${data.excess_vs_spy}%</span></div>
+        <div><span class="text-muted">Action</span><br><span style="color:#00ff88;font-size:16px">${data.action || 'TRADE'}</span></div>
       </div>
       
-      <div id="content">${activeTab === 'top10' ? renderTop10() : activeTab === 'backtest' ? renderBacktest() : renderContracts()}</div>
-      
-      <div class="text-muted text-small" style="text-align:center;margin-top:32px;padding-top:16px;border-top:1px solid #1e1e2e">
-        ⚠️ NOT financial advice. Simulated returns. SEC filing delay: 30-45 days.<br>
-        Wilson score confidence intervals (95% statistical significance)
+      <div style="margin-top:16px;background:#12121a;border-radius:8px;padding:12px">
+        <div class="text-muted" style="margin-bottom:8px">📋 WILSON SCORE ANALYSIS</div>
+        <div class="flex" style="gap:12px;flex-wrap:wrap">
+          <div><span class="text-muted">Confidence</span><br><span class="text-accent">95%</span></div>
+          <div><span class="text-muted">Rating</span><br><span class="text-accent">${data.genius_rating}</span></div>
+          <div><span class="text-muted">Risk-adjusted</span><br><span class="text-accent">Wilson lower bound</span></div>
+        </div>
+        <div class="text-muted mt-2">${data.genius_rating === '🔥 TOP' ? 'Elite signal — 95% confidence, large sample' : data.genius_rating === '✅ GOOD' ? 'Verified signal — statistically significant' : data.genius_rating === '⚠️ SMALL' ? 'Promising but low conviction — size 1-3%' : 'Insufficient data — pass'}</div>
       </div>
+      
+      <div class="text-muted mt-2" style="font-size:10px">⏱ ${new Date(data.timestamp).toLocaleString()}</div>
     </div>
   `;
-  root.innerHTML = html;
-}
-
-function renderTop10() {
-  let cards = '';
-  for (const p of TOP10) {
-    const stats = getStats(p.ticker);
-    const rating = stats ? getRating((stats.correct/stats.total)*100, stats.total, stats.maxDrawdown) : getRating(0, 1);
-    const riskColor = p.risk === 'Low' ? '#00ff88' : p.risk === 'Medium' ? '#ffaa00' : '#ff4466';
-    cards += `
-      <div class="card" style="border-left:3px solid ${rating.color}" onclick="this.querySelector('.details').classList.toggle('hidden')">
-        <div class="between">
-          <div>
-            <div class="flex" style="margin-bottom:6px">
-              <span style="font-family:monospace;font-weight:900;font-size:24px;color:#00ff8840">#${p.rank}</span>
-              <span style="font-family:monospace;font-weight:700;font-size:18px;color:#00ff88">${p.ticker}</span>
-              <span class="tag" style="background:#00ff8820;color:#00ff88">⚡ Top Signal</span>
-            </div>
-            <div class="text-small text-muted">${p.sector} · Risk: <span style="color:${riskColor}">${p.risk}</span></div>
-            <div class="badge" style="margin-top:8px;background:${rating.bg};color:${rating.color}">${rating.label}</div>
-            <div class="text-small text-accent mt-2">📊 Suggested position: ${rating.pct}% of portfolio</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:22px;font-weight:700;color:#00ff88">${p.return}</div>
-            <div class="text-small text-muted">hist. avg return</div>
-          </div>
-        </div>
-        <div class="details hidden" style="margin-top:12px;padding-top:12px;border-top:1px solid #1e1e2e;display:none">
-          <div class="card" style="background:#12121a;margin-bottom:8px">
-            <div class="text-muted text-small">WHALE SOURCES</div>
-            <div>${p.traders.map(t => `• ${t}`).join('<br>')}</div>
-          </div>
-          ${stats ? `<div class="card" style="background:#12121a;margin-bottom:8px">
-            <div class="text-accent text-small">📊 EXCESS vs S&P 500</div>
-            <div>+${(stats.avgExcess*100).toFixed(1)}% average per trade</div>
-            <div class="text-small text-muted">Best: +${(stats.bestTrade*100).toFixed(0)}% · Worst: ${(stats.maxDrawdown*100).toFixed(0)}%</div>
-          </div>` : ''}
-          <div style="font-size:13px;line-height:1.5">${p.why}</div>
-          <div class="text-small text-muted mt-2">⚠️ SEC filing delay: 30-45 days. Simulated from disclosure date.</div>
-        </div>
-        <div class="text-small text-muted mt-2">▼ tap for full analysis</div>
-      </div>
-    `;
-  }
-  return `<div class="card" style="background:#00ff8810;border-color:#00ff8860;margin-bottom:16px"><div class="text-accent" style="font-weight:700">🏆 TOP 10 GLOBAL PICKS</div><div class="text-small text-muted">Highest-conviction trades across all markets — ranked by signal strength, whale confluence, and historical track record.</div></div>${cards}`;
-}
-
-function renderBacktest() {
-  let rows = '';
-  for (const h of HISTORICAL) {
-    const winPct = (h.correct / h.total) * 100;
-    const rating = getRating(winPct, h.total, h.maxDrawdown);
-    const barColor = winPct >= 75 ? '#00ff88' : winPct >= 60 ? '#ffaa00' : '#ff4466';
-    rows += `
-      <div class="card">
-        <div class="between">
-          <span style="font-family:monospace;font-weight:700;font-size:16px;color:#00ff88">${h.ticker}</span>
-          <span class="badge" style="background:${rating.bg};color:${rating.color}">${rating.label}</span>
-        </div>
-        <div style="background:#ffffff10;border-radius:4px;height:6px;margin:8px 0">
-          <div style="height:100%;width:${winPct}%;background:${barColor};border-radius:4px"></div>
-        </div>
-        <div class="flex between">
-          <span class="text-small">✅ ${h.correct}/${h.total} wins (${Math.round(winPct)}%)</span>
-          <span class="text-small text-accent">📈 +${(h.avgExcess*100).toFixed(0)}% vs SPY</span>
-          <span class="text-small text-muted">💰 ${rating.pct}% position</span>
-        </div>
-        <div class="flex between mt-2">
-          <span class="text-small text-muted">Best: +${(h.bestTrade*100).toFixed(0)}%</span>
-          <span class="text-small text-muted">Worst: ${(h.maxDrawdown*100).toFixed(0)}%</span>
-        </div>
-      </div>
-    `;
-  }
   
-  const totalCorrect = HISTORICAL.reduce((sum,h) => sum + h.correct, 0);
-  const totalSignals = HISTORICAL.reduce((sum,h) => sum + h.total, 0);
-  const overallWin = Math.round((totalCorrect / totalSignals) * 100);
-  
-  return `
-    <div class="card" style="background:#818cf810;border-color:#818cf840;margin-bottom:16px">
-      <div style="color:#818cf8;font-weight:700">📊 BACKTEST ENGINE</div>
-      <div class="text-small text-muted mt-2">Wilson score confidence intervals (95% statistical significance). Simulated $10k portfolio, 10% per signal.</div>
-      <div style="background:#ffaa0010;border-left:3px solid #ffaa00;padding:8px;margin-top:10px;border-radius:6px;font-size:11px">⚠️ SEC filing delay: 30-45 days. Trades simulated starting day after filing.</div>
-    </div>
-    <div class="flex" style="gap:12px;margin-bottom:16px">
-      <div class="card" style="flex:1;text-align:center"><div class="text-muted text-small">OVERALL WIN RATE</div><div style="font-size:28px;font-weight:700;color:#00ff88">${overallWin}%</div></div>
-      <div class="card" style="flex:1;text-align:center"><div class="text-muted text-small">TOTAL SIGNALS</div><div style="font-size:28px;font-weight:700;color:#60a5fa">${totalSignals}</div></div>
-    </div>
-    <div class="card" style="margin-bottom:12px"><div style="font-weight:700;margin-bottom:12px">PER-TICKER BREAKDOWN</div>${rows}</div>
-  `;
+  document.getElementById('result').innerHTML = html;
+  document.getElementById('timestamp').innerHTML = new Date().toLocaleTimeString();
 }
 
-function renderContracts() {
-  const contracts = [
-    {company:"Dell Technologies", ticker:"DELL", value:"$9.7B", gap:"~6 months", details:"Michael Dell pledged $6.25B → Dell Federal wins Pentagon deal.", watch:"SEC filings for insider purchases."},
-    {company:"Oracle", ticker:"ORCL", value:"$13.6B", gap:"~14 months", details:"Larry Ellison $1M+ donation → Oracle wins JWCC cloud contract.", watch:"Congressional purchases (Tuberville/McCaul flagged)."},
-    {company:"Palantir", ticker:"PLTR", value:"$619M", gap:"Ongoing", details:"Peter Thiel alignment → DoD contracts for battlefield AI.", watch:"Armed Services committee buys."}
-  ];
-  let cards = '';
-  for (const c of contracts) {
-    cards += `
-      <div class="card" style="border-left:3px solid #ffaa00">
-        <div class="between">
-          <div><span style="font-weight:700">${c.company}</span> (${c.ticker})<div class="tag" style="margin-top:4px;background:#ffaa0020;color:#ffaa00">🤝 Watch</div></div>
-          <div style="text-align:right"><span style="color:#00ff88;font-weight:700">${c.value}</span><div class="text-small text-muted">Gap: ${c.gap}</div></div>
-        </div>
-        <div class="text-small mt-2">${c.details}</div>
-        <div class="text-small" style="margin-top:8px;background:#12121a;padding:6px 8px;border-radius:6px"><span style="color:#ffaa00">👁 Watch for:</span> ${c.watch}</div>
-        <div class="text-small text-muted mt-2">📄 Filing delay: trades simulated after disclosure (30-45d lag).</div>
-      </div>
-    `;
-  }
-  return `<div class="card" style="background:#ffaa0010;border-color:#ffaa0040;margin-bottom:16px"><div style="color:#ffaa00;font-weight:700">🤝 CONTRACT WATCH</div><div class="text-small text-muted">Tracks political donations → government contract awards (FEC.gov + USASpending.gov).</div></div>${cards}`;
-}
-
-window.setTab = function(tab) {
-  activeTab = tab;
-  render();
+// Set up event listeners
+document.getElementById('fetchBtn').onclick = () => {
+  const ticker = document.getElementById('tickerInput').value.trim();
+  if (ticker) fetchSignal(ticker);
 };
+document.getElementById('tickerInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') fetchSignal(e.target.value.trim());
+});
 
-render();
+// Load NVDA by default to show it works
+fetchSignal('NVDA');
 </script>
 </body>
-</html> 
+</html>
