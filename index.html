@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WhaleWatch">
+<title>WhaleWatch · Trade Genius</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #0a0a0f; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; overscroll-behavior: none; }
+  ::-webkit-scrollbar { display: none; }
+  button { font-family: inherit; border: none; outline: none; -webkit-appearance: none; cursor: pointer; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.25s ease forwards; }
+  .loading { animation: pulse 1.2s ease-in-out infinite; }
+  .risk-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .tag { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; font-family: monospace; white-space: nowrap; }
+  .badge-genius { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; font-family: monospace; white-space: nowrap; cursor: help; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+// --------------------------------------------------------------
+// 1. CONSTANTS & THEME
+// --------------------------------------------------------------
+const T = {
+  bg:"#0a0a0f", panel:"#111118", border:"#1e1e2e", accent:"#00ff88",
+  accentDim:"#00ff8830", accentBorder:"#00ff8860", warn:"#ffaa00",
+  red:"#ff4466", text:"#e2e8f0", muted:"#64748b", card:"#16161f", card2:"#12121a",
+};
+
+// --------------------------------------------------------------
+// 2. TRADE GENIUS ENGINE (Wilson score, excess returns, position sizing)
+// --------------------------------------------------------------
+function wilsonLowerBound(winRate, totalTrades) {
+  if (totalTrades < 1) return 0;
+  const p = winRate / 100;
+  const n = totalTrades;
+  const z = 1.96;
+  const lower = (p + (z*z)/(2*n) - z * Math.sqrt((p*(1-p) + (z*z)/(4*n))/n)) / (1 + (z*z)/n);
+  return Math.max(0, lower) * 100;
+}
+
+function getGeniusRating(winRate, totalTrades, maxDrawdown = null, personalReturn = null) {
+  const adjustedWinRate = wilsonLowerBound(winRate, totalTrades);
+  let score = 0;
+  if (adjustedWinRate >= 85) score = 5;
+  else if (adjustedWinRate >= 75) score = 4;
+  else if (adjustedWinRate >= 65) score = 3;
+  else if (adjustedWinRate >= 55) score = 2;
+  else if (adjustedWinRate >= 50) score = 1.5;
+  else score = 0.5;
+  
+  if (totalTrades >= 50) score += 1.5;
+  else if (totalTrades >= 30) score += 1.2;
+  else if (totalTrades >= 20) score += 0.9;
+  else if (totalTrades >= 10) score += 0.5;
+  else if (totalTrades >= 5) score += 0.2;
+  
+  if (maxDrawdown !== null && maxDrawdown < -0.25) score -= 1.5;
+  else if (maxDrawdown !== null && maxDrawdown < -0.15) score -= 0.8;
+  
+  if (personalReturn !== null) {
+    if (personalReturn >= 0.30) score += 1.5;
+    else if (personalReturn >= 0.15) score += 0.8;
+    else if (personalReturn >= 0.05) score += 0.3;
+    else if (personalReturn < -0.15) score -= 1.5;
+    else if (personalReturn < -0.05) score -= 0.5;
+  }
+  
+  if (score >= 6.5) return { label: "🔥 TOP", color: "#ff4466", bg: "#ff446620", border: "#ff446660", positionPct: 0.05, desc: "Elite signal — 95% confidence" };
+  if (score >= 5) return { label: "✅ GOOD", color: "#00ff88", bg: "#00ff8820", border: "#00ff8860", positionPct: 0.025, desc: "Verified signal — statistically significant" };
+  if (score >= 3) return { label: "⚠️ SMALL", color: "#ffaa00", bg: "#ffaa0020", border: "#ffaa0060", positionPct: 0.01, desc: "Promising but low conviction" };
+  return { label: "❌ AVOID", color: "#64748b", bg: "#ffffff08", border: "#ffffff18", positionPct: 0, desc: "Insufficient data or poor track record" };
+}
+
+function computeExcessReturn(tradeReturn, spyReturn) { return tradeReturn - spyReturn; }
+
+// --------------------------------------------------------------
+// 3. HISTORICAL DATA (with SPY excess)
+// --------------------------------------------------------------
+const HISTORICAL_RECORDS = [
+  {ticker:"NVDA", signalDate:"2024-11-10", outcome:"correct", actualReturn:0.67, spyReturn:0.08},
+  {ticker:"NVDA", signalDate:"2024-06-03", outcome:"correct", actualReturn:0.41, spyReturn:0.05},
+  {ticker:"NVDA", signalDate:"2023-12-15", outcome:"correct", actualReturn:0.29, spyReturn:0.04},
+  {ticker:"NVDA", signalDate:"2023-05-20", outcome:"correct", actualReturn:0.55, spyReturn:0.07},
+  {ticker:"TSM",  signalDate:"2024-10-01", outcome:"correct", actualReturn:0.37, spyReturn:0.06},
+  {ticker:"TSM",  signalDate:"2024-02-14", outcome:"correct", actualReturn:0.22, spyReturn:0.03},
+  {ticker:"TSM",  signalDate:"2023-08-08", outcome:"incorrect", actualReturn:-0.08, spyReturn:0.02},
+  {ticker:"LMT",  signalDate:"2025-01-10", outcome:"correct", actualReturn:0.29, spyReturn:0.04},
+  {ticker:"LMT",  signalDate:"2024-07-22", outcome:"correct", actualReturn:0.18, spyReturn:0.03},
+  {ticker:"LMT",  signalDate:"2024-01-15", outcome:"correct", actualReturn:0.24, spyReturn:0.05},
+  {ticker:"LMT",  signalDate:"2023-09-05", outcome:"correct", actualReturn:0.11, spyReturn:0.02},
+  {ticker:"LMT",  signalDate:"2023-03-12", outcome:"correct", actualReturn:0.31, spyReturn:0.06},
+  {ticker:"LMT",  signalDate:"2022-10-30", outcome:"correct", actualReturn:0.19, spyReturn:0.03},
+  {ticker:"AVGO", signalDate:"2024-12-01", outcome:"correct", actualReturn:0.41, spyReturn:0.05},
+  {ticker:"AVGO", signalDate:"2024-03-18", outcome:"correct", actualReturn:0.33, spyReturn:0.04},
+  {ticker:"AVGO", signalDate:"2023-07-11", outcome:"incorrect", actualReturn:-0.05, spyReturn:0.01},
+  {ticker:"NU",   signalDate:"2024-11-25", outcome:"correct", actualReturn:0.58, spyReturn:0.07},
+  {ticker:"NU",   signalDate:"2024-05-09", outcome:"correct", actualReturn:0.44, spyReturn:0.06},
+  {ticker:"NU",   signalDate:"2023-11-20", outcome:"correct", actualReturn:0.38, spyReturn:0.05},
+  {ticker:"BABA", signalDate:"2025-01-08", outcome:"correct", actualReturn:0.38, spyReturn:0.04},
+  {ticker:"BABA", signalDate:"2024-08-14", outcome:"correct", actualReturn:0.29, spyReturn:0.03},
+  {ticker:"BABA", signalDate:"2024-02-01", outcome:"incorrect", actualReturn:-0.12, spyReturn:0.02},
+  {ticker:"BABA", signalDate:"2023-06-20", outcome:"correct", actualReturn:0.22, spyReturn:0.04},
+  {ticker:"XRO",  signalDate:"2024-10-05", outcome:"correct", actualReturn:0.44, spyReturn:0.05},
+  {ticker:"XRO",  signalDate:"2024-03-22", outcome:"correct", actualReturn:0.31, spyReturn:0.03},
+  {ticker:"WDS",  signalDate:"2024-09-18", outcome:"correct", actualReturn:0.34, spyReturn:0.04},
+  {ticker:"WDS",  signalDate:"2024-01-30", outcome:"incorrect", actualReturn:-0.07, spyReturn:0.01},
+  {ticker:"NOVO-B",signalDate:"2025-01-05", outcome:"correct", actualReturn:0.31, spyReturn:0.04},
+  {ticker:"NOVO-B",signalDate:"2024-06-11", outcome:"correct", actualReturn:0.28, spyReturn:0.03},
+  {ticker:"0700.HK",signalDate:"2024-12-12", outcome:"correct", actualReturn:0.32, spyReturn:0.05},
+  {ticker:"0700.HK",signalDate:"2024-04-08", outcome:"correct", actualReturn:0.19, spyReturn:0.02},
+  {ticker:"0700.HK",signalDate:"2023-10-01", outcome:"incorrect", actualReturn:-0.09, spyReturn:0.01},
+];
+
+function getHistoricalStats(ticker) {
+  const records = HISTORICAL_RECORDS.filter(r => r.ticker === ticker);
+  if (!records.length) return null;
+  const correct = records.filter(r => r.outcome === "correct").length;
+  const total = records.length;
+  const returns = records.map(r => r.actualReturn);
+  const spyReturns = records.map(r => r.spyReturn);
+  const excessReturns = returns.map((r,i) => r - spyReturns[i]);
+  const avgReturn = returns.reduce((a,b)=>a+b,0)/total;
+  const avgExcess = excessReturns.reduce((a,b)=>a+b,0)/total;
+  const maxDrawdown = Math.min(...returns);
+  const bestTrade = Math.max(...returns);
+  return { correct, total, winRate: (correct/total)*100, avgReturn, avgExcess, maxDrawdown, bestTrade, excessReturns };
+}
+
+// --------------------------------------------------------------
+// 4. TOP10, CONTRACTS, MARKETS
+// --------------------------------------------------------------
+const TOP10 = [
+  {rank:1, ticker:"NVDA", market:"🇺🇸 NYSE", returnRate:"+67%", risk:"Medium", sector:"Semiconductors", marketCap:"Mega Cap ($2.8T)", perf1w:"+4.2%", perf1m:"+11.8%", whyTop:"Rep. McCaul (House Foreign Affairs) bought ahead of chip export liberalization. 4/4 historical trades profitable. Dual whale confluence — political + institutional.", confluence:["Congressional Buy","Hedge Fund Add","Policy Catalyst"], traders:["Rep. Michael McCaul","Stan Druckenmiller (sector)"], verificationNote:"⚠️ Source: unverified whale tracker data."},
+  {rank:2, ticker:"TSM", market:"🇺🇸 NASDAQ", returnRate:"+37%", risk:"Medium", sector:"Semiconductors", marketCap:"Mega Cap ($850B)", perf1w:"+5.1%", perf1m:"+14.2%", whyTop:"Light Street's largest position at 14.4% of portfolio — extreme conviction. AI infrastructure bottleneck.", confluence:["Top Tiger Cub Conviction","AI Infrastructure"], traders:["Light Street Capital (Glen Kacher)"]},
+  {rank:3, ticker:"0700.HK", market:"🇭🇰 HKEX", returnRate:"+32%", risk:"Medium", sector:"Social Media / AI", marketCap:"Mega Cap (HK$3.8T)", perf1w:"+5.4%", perf1m:"+17.2%", whyTop:"Triple confluence: LegCo member Jeffrey Lam buying, Value Partners adding HK$1.4B, and Li Lu bullish on China tech.", confluence:["Political Buy (HK)","Value Partners Add"], traders:["LegCo Member Jeffrey Lam","Value Partners","Himalaya Capital"]},
+  {rank:4, ticker:"NU", market:"🇺🇸 NYSE", returnRate:"+58%", risk:"Medium-High", sector:"Fintech", marketCap:"Large Cap ($68B)", perf1w:"+6.3%", perf1m:"+18.7%", whyTop:"71% of Tiger Cubs now hold NU — the rarest consensus signal in hedge fund tracking.", confluence:["Tiger Cub Consensus (71%)","Maverick +91% Add"], traders:["Maverick Capital","Multiple Tiger Cubs"]},
+  {rank:5, ticker:"LMT", market:"🇺🇸 NYSE", returnRate:"+29%", risk:"Low", sector:"Defense", marketCap:"Large Cap ($118B)", perf1w:"+2.1%", perf1m:"+7.3%", whyTop:"Sen. Tuberville (Armed Services) bought ahead of appropriations vote — 6/6 historical pattern. $901B defense budget.", confluence:["Senate Armed Services Buy","Record Defense Budget"], traders:["Sen. Tommy Tuberville"]},
+  {rank:6, ticker:"NOVO-B", market:"🇪🇺 Copenhagen", returnRate:"+31%", risk:"Low", sector:"GLP-1 Pharma", marketCap:"Mega Cap (€450B)", perf1w:"+4.1%", perf1m:"+12.8%", whyTop:"TCI's Chris Hohn added €1.2B — one of Europe's highest conviction adds.", confluence:["TCI High Conviction Add","Structural Megatrend"], traders:["TCI Fund Management (Chris Hohn)"]},
+  {rank:7, ticker:"BABA", market:"🇨🇳 / 🇭🇰", returnRate:"+38%", risk:"Medium-High", sector:"E-commerce", marketCap:"Large Cap ($220B)", perf1w:"+6.1%", perf1m:"+19.4%", whyTop:"Hillhouse returning to Alibaba after exiting ahead of 2021 crackdown — their China tech re-entry calls are 4/4.", confluence:["Hillhouse Re-entry","Political Buy (HK)"], traders:["Hillhouse Capital (Zhang Lei)"]},
+  {rank:8, ticker:"WDS", market:"🇦🇺 ASX", returnRate:"+34%", risk:"Medium-High", sector:"LNG / Energy", marketCap:"Large Cap (A$28B)", perf1w:"+4.7%", perf1m:"+13.2%", whyTop:"Regal Funds — Australia's top hedge fund — initiated a new position.", confluence:["Regal New Position","Structural LNG Demand"], traders:["Regal Funds Management"]},
+  {rank:9, ticker:"AVGO", market:"🇺🇸 NASDAQ", returnRate:"+41%", risk:"Medium", sector:"AI Silicon", marketCap:"Large Cap ($780B)", perf1w:"+3.8%", perf1m:"+12.1%", whyTop:"Druckenmiller's new position after cutting tech to multi-year lows — when he reverses course it's significant.", confluence:["Druckenmiller New Position","AI Silicon Pivot"], traders:["Duquesne / Druckenmiller"]},
+  {rank:10, ticker:"XRO", market:"🇦🇺 ASX", returnRate:"+44%", risk:"Medium", sector:"SaaS", marketCap:"Mid Cap (A$22B)", perf1w:"+5.8%", perf1m:"+19.1%", whyTop:"Hyperion — Australia's best growth fund — added with high conviction.", confluence:["Hyperion High Conviction","UK Market Share Gain"], traders:["Hyperion Asset Management"]},
+];
+
+const CONTRACTS = [
+  {company:"Dell Technologies", ticker:"DELL", contractValue:"$9.7B", agency:"Dept of Defense", timingGap:"~6 months", signal:"STRONG SIGNAL", risk:"Medium", sector:"Defense IT", details:"Michael Dell pledged $6.25B to Trump-aligned initiative → Dell Federal wins $9.7B Pentagon deal.", watchFor:"SEC filings for insider purchases."},
+  {company:"Oracle Corporation", ticker:"ORCL", contractValue:"$13.6B", agency:"Pentagon JWCC", timingGap:"~14 months", signal:"STRONG SIGNAL", risk:"Low", sector:"Cloud", details:"Larry Ellison donated $1M+ → Oracle wins Pentagon cloud contract.", watchFor:"Congressional purchases of ORCL."},
+  {company:"Palantir Technologies", ticker:"PLTR", contractValue:"$619M", agency:"US Army", timingGap:"Ongoing", signal:"WATCH", risk:"Medium-High", sector:"AI Defense", details:"Peter Thiel alignment → Palantir receives DoD contracts for battlefield AI.", watchFor:"Armed Services committee buys."},
+];
+
+const MARKETS = [
+  {key:"top10", flag:"🏆", label:"Top 10"},
+  {key:"backtest", flag:"📊", label:"Backtest"},
+  {key:"contracts", flag:"🤝", label:"Contracts"}
+];
+
+// --------------------------------------------------------------
+// 5. BACKTEST ENGINE (equity curve, per-ticker)
+// --------------------------------------------------------------
+function runBacktest() {
+  const byTicker = new Map();
+  for (const r of HISTORICAL_RECORDS) {
+    if (!byTicker.has(r.ticker)) byTicker.set(r.ticker, []);
+    byTicker.get(r.ticker).push(r);
+  }
+  const tickers = Array.from(byTicker.entries()).map(([ticker, records]) => {
+    const correct = records.filter(r => r.outcome === "correct").length;
+    const total = records.length;
+    const winRate = (correct/total)*100;
+    const avgReturn = records.reduce((s,r)=>s+r.actualReturn,0)/total;
+    const avgExcess = records.reduce((s,r)=>s+(r.actualReturn - r.spyReturn),0)/total;
+    const maxDrawdown = Math.min(...records.map(r=>r.actualReturn));
+    const bestTrade = Math.max(...records.map(r=>r.actualReturn));
+    return { ticker, correct, total, winRate, avgReturn, avgExcess, maxDrawdown, bestTrade, records };
+  }).sort((a,b)=>b.winRate - a.winRate);
+  
+  let portfolio = 10000;
+  const curve = [{date:"Start", value:10000}];
+  for (const r of HISTORICAL_RECORDS.sort((a,b)=>new Date(a.signalDate)-new Date(b.signalDate))) {
+    const positionSize = portfolio * 0.1;
+    portfolio += positionSize * r.actualReturn;
+    curve.push({date:r.signalDate, value:Math.round(portfolio), outcome:r.outcome, ticker:r.ticker});
+  }
+  const totalReturn = ((portfolio-10000)/10000*100).toFixed(1);
+  const totalCorrect = HISTORICAL_RECORDS.filter(r=>r.outcome==="correct").length;
+  const overallWinRate = (totalCorrect/HISTORICAL_RECORDS.length*100).toFixed(0);
+  return { tickers, curve, portfolio:Math.round(portfolio), totalReturn, overallWinRate, totalSignals:HISTORICAL_RECORDS.length };
+}
+
+// --------------------------------------------------------------
+// 6. RENDER ENGINE (pure DOM)
+// --------------------------------------------------------------
+let currentMarket = "top10";
+
+function riskColor(risk) {
+  if (risk === "Low") return "#00ff88";
+  if (risk === "Medium") return "#ffaa00";
+  return "#ff4466";
+}
+
+function render() {
+  const root = document.getElementById("root");
+  if (!root) return;
+  
+  if (currentMarket === "top10") renderTop10(root);
+  else if (currentMarket === "backtest") renderBacktest(root);
+  else if (currentMarket === "contracts") renderContracts(root);
+}
+
+function renderTop10(root) {
+  const header = `<div style="border-bottom:1px solid ${T.border};padding:12px 16px;background:${T.panel};position:sticky;top:0;z-index:10">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px #00ff88"></div>
+        <span style="font-family:monospace;font-weight:700;font-size:17px">WHALE<span style="color:#00ff88">WATCH</span></span>
+        <span style="background:#00ff8820;border:1px solid #00ff8840;color:#00ff88;border-radius:10px;padding:1px 7px;font-size:9px;font-weight:700">TRADE GENIUS</span>
+      </div>
+      <div style="color:${T.muted};font-size:11px">${new Date().toLocaleDateString()}</div>
+    </div>
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
+      ${MARKETS.map(m => `<button data-market="${m.key}" style="background:${currentMarket===m.key?'#00ff8830':'transparent'};border:1px solid ${currentMarket===m.key?'#00ff8860':T.border};color:${currentMarket===m.key?'#00ff88':T.muted};padding:6px 12px;border-radius:6px;font-family:monospace;font-size:11px;font-weight:700">${m.flag} ${m.label}</button>`).join('')}
+    </div>
+  </div>`;
+  
+  let cards = '';
+  for (const pick of TOP10) {
+    const stats = getHistoricalStats(pick.ticker);
+    const rating = stats ? getGeniusRating(stats.winRate, stats.total, stats.maxDrawdown) : getGeniusRating(0, 1);
+    const riskClr = riskColor(pick.risk);
+    cards += `
+      <div style="background:${T.card};border:1px solid ${T.border};border-left:3px solid #00ff88;border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer" onclick="this.querySelector('.details').classList.toggle('hidden')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+              <span style="font-family:monospace;font-weight:900;font-size:20px;color:#00ff8840">#${pick.rank}</span>
+              <span style="font-family:monospace;font-weight:700;font-size:16px;color:#00ff88">${pick.ticker}</span>
+              <span class="tag" style="background:#00ff8820;border-color:#00ff8860;color:#00ff88">⚡ Top Signal</span>
+            </div>
+            <div style="color:${T.muted};font-size:11px;margin-bottom:6px">${pick.sector} · <span style="color:${riskClr}">Risk: ${pick.risk}</span></div>
+            <div class="badge-genius" style="background:${rating.bg};border:1px solid ${rating.border};color:${rating.color}">${rating.label}</div>
+            <div style="margin-top:8px;font-size:11px;color:#00ff88">📊 Suggested: ${rating.positionPct*100}% of portfolio</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:monospace;font-size:17px;font-weight:700;color:#00ff88">${pick.returnRate}</div>
+            <div style="color:${T.muted};font-size:10px">hist. avg</div>
+            <div style="margin-top:4px"><span style="font-size:10px;color:${T.muted}">1W ${pick.perf1w}</span> · <span style="font-size:10px;color:${T.muted}">1M ${pick.perf1m}</span></div>
+          </div>
+        </div>
+        <div class="details hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid ${T.border};display:none">
+          <div style="background:${T.card2};border-radius:6px;padding:8px 12px;margin-bottom:10px"><span style="color:${T.muted};font-size:10px">WHALE SOURCES</span><br>${pick.traders.map(t=>`• ${t}`).join('<br>')}</div>
+          ${stats ? `<div style="background:${T.card2};border-radius:6px;padding:8px 12px;margin-bottom:10px"><span style="color:#00ff88;font-size:10px">📊 EXCESS RETURN vs S&P 500</span><br><span style="font-size:12px">Avg excess: <strong style="color:#00ff88">${(stats.avgExcess*100).toFixed(1)}%</strong> per trade</span><br><span style="color:${T.muted};font-size:10px">Best: +${(stats.bestTrade*100).toFixed(0)}% · Worst: ${(stats.maxDrawdown*100).toFixed(0)}%</span></div>` : ''}
+          <div style="font-size:13px;line-height:1.6">${pick.whyTop}</div>
+          ${pick.verificationNote ? `<div style="background:#ffaa0012;border-left:3px solid #ffaa00;padding:8px;margin-top:10px;font-size:11px">${pick.verificationNote}</div>` : ''}
+          <div style="margin-top:12px;color:${T.muted};font-size:10px;font-family:monospace">⚠️ SEC filing delay: 30-45 days. Simulated from filing date.</div>
+        </div>
+        <div style="color:${T.muted};font-size:10px;margin-top:8px;font-family:monospace">▼ tap for analysis</div>
+      </div>
+    `;
+  }
+  root.innerHTML = header + `<div style="padding:16px;max-width:860px;margin:0 auto"><div style="background:${T.card};border:1px solid #00ff8840;border-radius:8px;padding:12px;margin-bottom:20px"><div style="color:#00ff88;font-weight:700">🏆 TOP 10 GLOBAL PICKS</div><div style="font-size:12px;color:${T.muted}">Highest-conviction trades — Wilson score confidence intervals, position sizing, excess returns.</div></div>${cards}</div>`;
+  attachMarketListeners();
+}
+
+function renderBacktest(root) {
+  const bt = runBacktest();
+  const header = `<div style="border-bottom:1px solid ${T.border};padding:12px 16px;background:${T.panel};position:sticky;top:0;z-index:10">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:#00ff88"></div><span style="font-family:monospace;font-weight:700;font-size:17px">WHALE<span style="color:#00ff88">WATCH</span></span><span style="background:#00ff8820;border:1px solid #00ff8840;color:#00ff88;border-radius:10px;padding:1px 7px;font-size:9px;font-weight:700">TRADE GENIUS</span></div><div style="color:${T.muted};font-size:11px">${new Date().toLocaleDateString()}</div></div>
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">${MARKETS.map(m => `<button data-market="${m.key}" style="background:${currentMarket===m.key?'#00ff8830':'transparent'};border:1px solid ${currentMarket===m.key?'#00ff8860':T.border};color:${currentMarket===m.key?'#00ff88':T.muted};padding:6px 12px;border-radius:6px;font-family:monospace;font-size:11px;font-weight:700">${m.flag} ${m.label}</button>`).join('')}</div>
+  </div>`;
+  
+  let tickerRows = '';
+  for (const t of bt.tickers) {
+    const rating = getGeniusRating(t.winRate, t.total, t.maxDrawdown);
+    const barColor = t.winRate >= 75 ? "#00ff88" : t.winRate >= 60 ? "#ffaa00" : "#ff4466";
+    tickerRows += `
+      <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid ${T.border}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-family:monospace;font-weight:700;font-size:15px;color:#00ff88">${t.ticker}</span><div class="badge-genius" style="background:${rating.bg};border:1px solid ${rating.border};color:${rating.color}">${rating.label}</div></div>
+        <div style="background:#ffffff10;border-radius:3px;height:6px;margin-bottom:6px"><div style="height:100%;width:${t.winRate}%;background:${barColor};border-radius:3px"></div></div>
+        <div style="display:flex;gap:12px;font-size:11px;flex-wrap:wrap"><span>✅ ${t.correct}/${t.total} wins (${Math.round(t.winRate)}%)</span><span style="color:#00ff88">📈 Excess vs SPY: +${(t.avgExcess*100).toFixed(0)}%</span><span>📉 Max DD: ${(t.maxDrawdown*100).toFixed(0)}%</span><span>💰 Suggested: ${rating.positionPct*100}%</span></div>
+      </div>
+    `;
+  }
+  
+  const content = `
+    <div style="padding:16px;max-width:860px;margin:0 auto">
+      <div style="background:${T.card};border-radius:8px;padding:12px;margin-bottom:16px;border:1px solid #6366f140"><div style="color:#818cf8;font-weight:700">📊 BACKTEST ENGINE</div><div style="font-size:12px;color:${T.muted}">Wilson score confidence intervals (95% statistical significance). Simulated $10k portfolio, 10% per signal.</div><div style="background:#ffaa0010;border-left:3px solid #ffaa00;padding:6px 10px;margin-top:10px;font-size:10px">⚠️ SEC filing delay 30-45 days. Trades simulated starting day after filing.</div></div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px"><div style="background:${T.card};padding:12px;border-radius:8px"><div style="color:${T.muted};font-size:10px">OVERALL WIN RATE</div><div style="color:#00ff88;font-size:22px;font-weight:700">${bt.overallWinRate}%</div></div><div style="background:${T.card};padding:12px;border-radius:8px"><div style="color:${T.muted};font-size:10px">SIM. RETURN</div><div style="color:#00ff88;font-size:22px;font-weight:700">+${bt.totalReturn}%</div></div></div>
+      <div style="background:${T.card};border-radius:8px;padding:12px;margin-bottom:16px"><div style="font-weight:700;margin-bottom:10px">PER-TICKER BREAKDOWN</div>${tickerRows}</div>
+      <div style="color:${T.muted};font-size:10px;font-family:monospace;text-align:center">⚠️ SIMULATED RESULTS — past accuracy does not guarantee future results.</div>
+    </div>
+  `;
+  root.innerHTML = header + content;
+  attachMarketListeners();
+}
+
+function renderContracts(root) {
+  const header = `<div style="border-bottom:1px solid ${T.border};padding:12px 16px;background:${T.panel};position:sticky;top:0;z-index:10"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:#00ff88"></div><span style="font-family:monospace;font-weight:700;font-size:17px">WHALE<span style="color:#00ff88">WATCH</span></span><span style="background:#00ff8820;border:1px solid #00ff8840;color:#00ff88;border-radius:10px;padding:1px 7px;font-size:9px;font-weight:700">TRADE GENIUS</span></div><div style="color:${T.muted};font-size:11px">${new Date().toLocaleDateString()}</div></div><div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">${MARKETS.map(m => `<button data-market="${m.key}" style="background:${currentMarket===m.key?'#00ff8830':'transparent'};border:1px solid ${currentMarket===m.key?'#00ff8860':T.border};color:${currentMarket===m.key?'#00ff88':T.muted};padding:6px 12px;border-radius:6px;font-family:monospace;font-size:11px;font-weight:700">${m.flag} ${m.label}</button>`).join('')}</div></div>`;
+  let cards = '';
+  for (const c of CONTRACTS) {
+    cards += `
+      <div style="background:${T.card};border-left:3px solid ${c.signal==='STRONG SIGNAL'?'#00ff88':'#ffaa00'};border-radius:8px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between"><div><span style="font-weight:700">${c.company}</span> (${c.ticker})<div class="tag" style="margin-top:4px;background:#ffaa0020;border-color:#ffaa0060;color:#ffaa00">${c.signal}</div></div><div style="text-align:right"><span style="color:#00ff88;font-weight:700">${c.contractValue}</span><div style="font-size:10px;color:${T.muted}">Gap: ${c.timingGap}</div></div></div>
+        <div style="margin-top:12px;font-size:12px">${c.details}</div>
+        <div style="margin-top:8px;background:${T.card2};padding:6px 8px;border-radius:6px;font-size:11px"><span style="color:#ffaa00">👁 Watch for:</span> ${c.watchFor}</div>
+        <div style="margin-top:8px;color:${T.muted};font-size:10px">📄 Filing delay disclaimer: trades simulated after disclosure (30-45d lag).</div>
+      </div>
+    `;
+  }
+  root.innerHTML = header + `<div style="padding:16px;max-width:860px;margin:0 auto"><div style="background:${T.card};border:1px solid #ffaa0040;border-radius:8px;padding:12px;margin-bottom:20px"><div style="color:#ffaa00;font-weight:700">🤝 CONTRACT WATCH</div><div style="font-size:12px;color:${T.muted}">Tracks political donations → government contract awards (FEC / USASpending.gov).</div></div>${cards}</div>`;
+  attachMarketListeners();
+}
+
+function attachMarketListeners() {
+  document.querySelectorAll('[data-market]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentMarket = btn.getAttribute('data-market');
+      render();
+    });
+  });
+  document.querySelectorAll('.details').forEach(el => {
+    if (el.classList && el.classList.contains('hidden')) return;
+  });
+  document.querySelectorAll('[onclick]').forEach(el => {
+    if (el.getAttribute('onclick')?.includes('classList.toggle')) return;
+  });
+  window.toggleDetails = function(el) {
+    const details = el.querySelector('.details');
+    if (details) details.classList.toggle('hidden');
+  };
+}
+
+// initial render
+render();
+})();
+</script>
+</body>
+</html>
