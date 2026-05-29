@@ -386,16 +386,7 @@ function AccuracyBadge({ticker}){
     </div>
   );
 }
-  const acc = getHistoricalAccuracy(ticker);
-  if (!acc) return null;
-  const color = acc.pct >= 80 ? "#00ff88" : acc.pct >= 60 ? "#ffaa00" : "#ff4466";
-  return (
-    <span style={{background:"#ffffff08",border:`1px solid ${color}40`,color,padding:"2px 7px",borderRadius:10,fontSize:10,fontWeight:700,fontFamily:"monospace",whiteSpace:"nowrap"}}>
-      {acc.pct}% accurate ({acc.correct}/{acc.total})
-    </span>
-  );
-}
-
+  
 // Yahoo Finance button — opens in new tab
 function YahooBtn({ticker}){
   const yt = yahooTicker(ticker);
