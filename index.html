@@ -3,571 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>WhaleWatch · Trade Supercomputer</title>
+<title>WhaleWatch · Trade Genius</title>
 <style>
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  
-  body {
-    background: #0a0a0f;
-    color: #e2e8f0;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
-    padding: 20px;
-    min-height: 100vh;
-  }
-  
-  .container {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #1e1e2e;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .logo-dot {
-    width: 10px;
-    height: 10px;
-    background: #00ff88;
-    border-radius: 50%;
-    box-shadow: 0 0 6px #00ff88;
-  }
-  
-  .logo-text {
-    font-family: monospace;
-    font-weight: 800;
-    font-size: 22px;
-    letter-spacing: -0.5px;
-  }
-  
-  .logo-accent {
-    color: #00ff88;
-  }
-  
-  .badge {
-    background: #00ff8820;
-    border: 1px solid #00ff8860;
-    color: #00ff88;
-    padding: 4px 12px;
-    border-radius: 40px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-  
-  .date {
-    font-size: 12px;
-    color: #64748b;
-    font-family: monospace;
-  }
-  
-  /* Search Card */
-  .search-card {
-    background: #111118;
-    border: 1px solid #2a2a3a;
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 24px;
-  }
-  
-  .input-group {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-  
-  input {
-    flex: 1;
-    background: #0a0a0f;
-    border: 1px solid #2a2a3a;
-    color: white;
-    padding: 14px 18px;
-    border-radius: 60px;
-    font-size: 16px;
-    font-family: monospace;
-    font-weight: 500;
-  }
-  
-  input:focus {
-    outline: none;
-    border-color: #00ff88;
-  }
-  
-  button {
-    background: #00ff8820;
-    border: 1px solid #00ff8860;
-    color: #00ff88;
-    padding: 14px 24px;
-    border-radius: 60px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  button:active {
-    transform: scale(0.97);
-  }
-  
-  .note {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 8px;
-  }
-  
-  /* Section Titles */
-  .section-title {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .section-title span {
-    background: #00ff8820;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 11px;
-  }
-  
-  /* Result Card */
-  .result-card {
-    background: #16161f;
-    border: 1px solid #1e1e2e;
-    border-radius: 24px;
-    padding: 24px;
-    margin-bottom: 20px;
-  }
-  
-  .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  
-  .ticker {
-    font-family: monospace;
-    font-size: 28px;
-    font-weight: 800;
-    color: #00ff88;
-  }
-  
-  .rating {
-    font-size: 14px;
-    font-weight: 800;
-    padding: 6px 14px;
-    border-radius: 40px;
-    display: inline-block;
-  }
-  
-  .rating-top { background: #ff446620; border: 1px solid #ff4466; color: #ff4466; }
-  .rating-good { background: #00ff8820; border: 1px solid #00ff88; color: #00ff88; }
-  .rating-small { background: #ffaa0020; border: 1px solid #ffaa00; color: #ffaa00; }
-  .rating-avoid { background: #ffffff10; border: 1px solid #64748b; color: #64748b; }
-  
-  .position-size {
-    font-size: 36px;
-    font-weight: 800;
-    color: #00ff88;
-  }
-  
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 16px;
-    margin: 20px 0;
-    background: #0f0f14;
-    padding: 16px;
-    border-radius: 20px;
-  }
-  
-  .stat-label {
-    font-size: 11px;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .stat-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: #00ff88;
-  }
-  
-  /* Top 10 List */
-  .top10-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 24px;
-  }
-  
-  .top10-item {
-    background: #16161f;
-    border: 1px solid #1e1e2e;
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .top10-item:hover {
-    border-color: #00ff8860;
-    background: #1a1a24;
-  }
-  
-  .top10-rank {
-    font-family: monospace;
-    font-size: 24px;
-    font-weight: 800;
-    color: #00ff8840;
-    min-width: 50px;
-  }
-  
-  .top10-ticker {
-    font-family: monospace;
-    font-size: 18px;
-    font-weight: 700;
-    color: #00ff88;
-    min-width: 80px;
-  }
-  
-  .top10-rating {
-    min-width: 90px;
-  }
-  
-  .top10-excess {
-    font-family: monospace;
-    font-size: 14px;
-    color: #00ff88;
-  }
-  
-  .top10-position {
-    font-family: monospace;
-    font-size: 16px;
-    font-weight: 700;
-    color: #00ff88;
-    min-width: 60px;
-    text-align: right;
-  }
-  
-  .last-updated {
-    font-size: 11px;
-    color: #64748b;
-    text-align: right;
-    margin-bottom: 16px;
-  }
-  
-  .divider {
-    height: 1px;
-    background: #1e1e2e;
-    margin: 20px 0;
-  }
-  
-  .footer {
-    text-align: center;
-    font-size: 10px;
-    color: #64748b;
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #1e1e2e;
-  }
-  
-  .error {
-    color: #ff4466;
-    border-left: 3px solid #ff4466;
-    background: #ff446610;
-    padding: 16px;
-    border-radius: 16px;
-  }
-  
-  .loading {
-    text-align: center;
-    padding: 40px;
-    color: #00ff88;
-  }
-  
-  @media (max-width: 600px) {
-    body { padding: 12px; }
-    .top10-rank { font-size: 18px; min-width: 35px; }
-    .top10-ticker { font-size: 14px; min-width: 60px; }
-    .top10-excess { font-size: 11px; }
-    .top10-position { font-size: 12px; min-width: 45px; }
-    .rating { font-size: 10px; padding: 3px 8px; }
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0f; color: #e2e8f0; font-family: system-ui, sans-serif; padding: 20px; }
+  .container { max-width: 800px; margin: 0 auto; }
+  .card { background: #16161f; border: 1px solid #1e1e2e; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .ticker { font-family: monospace; font-size: 28px; font-weight: 800; color: #00ff88; }
+  .rating { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .rating-top { background: #ff446620; color: #ff4466; }
+  .rating-good { background: #00ff8820; color: #00ff88; }
+  .rating-small { background: #ffaa0020; color: #ffaa00; }
+  .rating-avoid { background: #ffffff10; color: #64748b; }
+  input, button { background: #1e1e2e; border: 1px solid #2a2a3a; color: white; padding: 12px 16px; border-radius: 12px; font-size: 16px; }
+  button { background: #00ff8820; border-color: #00ff8860; color: #00ff88; cursor: pointer; font-weight: bold; }
+  .flex { display: flex; gap: 12px; flex-wrap: wrap; }
+  .error { color: #ff4466; background: #ff446610; padding: 16px; border-radius: 12px; }
+  .text-muted { color: #64748b; font-size: 12px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; background: #0f0f14; padding: 12px; border-radius: 12px; }
+  .position-size { font-size: 36px; font-weight: 800; color: #00ff88; }
+  .top10-item { background: #16161f; border: 1px solid #1e1e2e; border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .top10-rank { font-size: 20px; font-weight: 800; color: #00ff8840; min-width: 40px; }
+  .footer { text-align: center; font-size: 10px; color: #64748b; margin-top: 32px; padding-top: 16px; border-top: 1px solid #1e1e2e; }
+  .loading { text-align: center; padding: 40px; color: #00ff88; }
 </style>
 </head>
 <body>
 <div class="container">
-  <!-- Header -->
-  <div class="header">
-    <div class="logo">
-      <div class="logo-dot"></div>
-      <div class="logo-text">WHALE<span class="logo-accent">WATCH</span></div>
-      <div class="badge">SUPERCOMPUTER</div>
+  <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 10px; height: 10px; background: #00ff88; border-radius: 50%;"></div>
+      <span style="font-family: monospace; font-size: 20px; font-weight: 800;">WHALE<span style="color:#00ff88">WATCH</span></span>
+      <span style="background: #00ff8820; padding: 2px 8px; border-radius: 20px; font-size: 10px;">SUPERCOMPUTER</span>
     </div>
-    <div class="date" id="currentDate"></div>
+    <div class="text-muted" id="date">--</div>
   </div>
 
-  <!-- Search Section -->
-  <div class="search-card">
-    <div class="input-group">
-      <input type="text" id="tickerInput" placeholder="TICKER (NVDA / AAPL / TSLA)" value="NVDA" autocomplete="off">
+  <div class="card">
+    <div class="flex">
+      <input type="text" id="tickerInput" placeholder="TICKER (NVDA, AAPL, TSLA)" value="NVDA" style="flex: 1;">
       <button id="fetchBtn">⚡ ANALYZE</button>
     </div>
-    <div class="note">🔬 Wilson score confidence interval (95% statistical significance) · Excess returns vs S&P 500</div>
+    <div class="text-muted" style="margin-top: 12px;">🔬 Wilson score 95% CI · Excess returns vs S&P 500</div>
   </div>
 
-  <!-- Top 10 Section -->
-  <div class="section-title">
-    🏆 TOP 10 SIGNALS <span>AUTO-UPDATED DAILY</span>
-  </div>
-  <div id="lastUpdated" class="last-updated"></div>
-  <div id="top10Container" class="top10-grid">
-    <div class="loading">🐋 Loading top 10 signals...</div>
-  </div>
+  <h3 style="margin-bottom: 12px;">🏆 TOP 10 SIGNALS</h3>
+  <div id="top10Container" class="loading">Loading top 10...</div>
 
-  <!-- Individual Signal Result -->
   <div id="resultContainer"></div>
 
   <div class="footer">
-    ⚠️ NOT FINANCIAL ADVICE · Simulated backtest returns · SEC filing delay 30-45 days<br>
-    🧠 WhaleWatch v4.0 · Auto-refreshes daily · Wilson score 95% CI
+    ⚠️ NOT FINANCIAL ADVICE · Wilson score confidence intervals<br>
+    🐋 WhaleWatch v4.0
   </div>
 </div>
 
 <script>
-  // ============================================================
-  // CONFIGURATION
-  // ============================================================
-  const API_BASE = "https://whalewatch-13ut.onrender.com"; 
+  // YOUR CORRECT BACKEND URL
+  const API_BASE = "https://whalewatch-13ut.onrender.com";
   
-  // ============================================================
-  // DISPLAY DATE
-  // ============================================================
-  const now = new Date();
-  document.getElementById('currentDate').innerText = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('date').innerText = new Date().toLocaleDateString();
   
-  // ============================================================
-  // FETCH TOP 10 FROM BACKEND
-  // ============================================================
+  // Test backend connection first
+  async function testBackend() {
+    try {
+      const res = await fetch(`${API_BASE}/`);
+      const data = await res.json();
+      console.log('Backend connected:', data);
+      return true;
+    } catch (e) {
+      console.error('Backend unreachable:', e);
+      document.getElementById('top10Container').innerHTML = `
+        <div class="error">
+          ⚠️ Cannot reach backend at ${API_BASE}<br>
+          Make sure Render is running and URL is correct.
+        </div>
+      `;
+      return false;
+    }
+  }
+  
   async function fetchTop10() {
     const container = document.getElementById('top10Container');
-    const lastUpdatedDiv = document.getElementById('lastUpdated');
+    container.innerHTML = '<div class="loading">Loading top 10...</div>';
     
     try {
       const response = await fetch(`${API_BASE}/v1/top10`);
-      if (!response.ok) throw new Error('Failed to fetch top 10');
-      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       
-      if (data.last_updated) {
-        const updated = new Date(data.last_updated).toLocaleString();
-        lastUpdatedDiv.innerHTML = `📅 Last auto-update: ${updated} · ${data.total_tickers || 0} tickers tracked`;
-      }
-      
       if (!data.top_10 || data.top_10.length === 0) {
-        container.innerHTML = '<div class="loading">⚠️ No data yet — first update running soon</div>';
+        container.innerHTML = '<div class="error">No top 10 data available</div>';
         return;
       }
       
-      renderTop10(data.top_10);
+      let html = '';
+      data.top_10.forEach((item, i) => {
+        const ratingClass = item.genius_rating === '🔥 TOP' ? 'rating-top' :
+                           item.genius_rating === '✅ GOOD' ? 'rating-good' :
+                           item.genius_rating === '⚠️ SMALL' ? 'rating-small' : 'rating-avoid';
+        html += `
+          <div class="top10-item" onclick="fetchSignal('${item.ticker}')">
+            <span class="top10-rank">#${i+1}</span>
+            <span style="font-weight: bold; min-width: 60px;">${item.ticker}</span>
+            <span class="rating ${ratingClass}">${item.genius_rating}</span>
+            <span style="color:#00ff88;">+${item.excess_vs_spy}% vs SPY</span>
+            <span>💰 ${item.position_pct}%</span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
     } catch (error) {
-      console.error('Top 10 error:', error);
-      container.innerHTML = `<div class="error">⚠️ Could not load top 10. Make sure backend is running.</div>`;
+      console.error('Top10 error:', error);
+      container.innerHTML = `<div class="error">⚠️ Could not load top 10: ${error.message}</div>`;
     }
   }
   
-  // ============================================================
-  // RENDER TOP 10 LIST
-  // ============================================================
-  function renderTop10(top10List) {
-    const container = document.getElementById('top10Container');
-    
-    let html = '';
-    for (let i = 0; i < top10List.length; i++) {
-      const item = top10List[i];
-      const ratingClass = 
-        item.genius_rating === '🔥 TOP' ? 'rating-top' :
-        item.genius_rating === '✅ GOOD' ? 'rating-good' :
-        item.genius_rating === '⚠️ SMALL' ? 'rating-small' : 'rating-avoid';
-      
-      html += `
-        <div class="top10-item" onclick="fetchSignal('${item.ticker}')">
-          <div class="top10-rank">#${i + 1}</div>
-          <div class="top10-ticker">${item.ticker}</div>
-          <div class="top10-rating"><span class="rating ${ratingClass}">${item.genius_rating}</span></div>
-          <div class="top10-excess">📈 ${item.excess_vs_spy >= 0 ? '+' : ''}${item.excess_vs_spy}% vs SPY</div>
-          <div class="top10-position">💰 ${item.position_pct}%</div>
-        </div>
-      `;
-    }
-    
-    container.innerHTML = html;
-  }
-  
-  // ============================================================
-  // FETCH INDIVIDUAL SIGNAL
-  // ============================================================
   async function fetchSignal(ticker) {
     const container = document.getElementById('resultContainer');
-    container.innerHTML = `<div class="result-card loading">🔄 Supercomputer analyzing ${ticker.toUpperCase()}...</div>`;
+    container.innerHTML = '<div class="loading">Analyzing...</div>';
     
     try {
-      const response = await fetch(`${API_BASE}/v1/signal/${encodeURIComponent(ticker)}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
+      const response = await fetch(`${API_BASE}/v1/signal/${ticker}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      renderSignal(data);
       
-      // Scroll to result on mobile
-      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (error) {
-      console.error('Signal error:', error);
+      if (data.error) throw new Error(data.error);
+      
+      const ratingClass = data.genius_rating === '🔥 TOP' ? 'rating-top' :
+                         data.genius_rating === '✅ GOOD' ? 'rating-good' :
+                         data.genius_rating === '⚠️ SMALL' ? 'rating-small' : 'rating-avoid';
+      
       container.innerHTML = `
-        <div class="result-card error">
-          ⚠️ Could not fetch signal for ${ticker.toUpperCase()}<br>
-          <span style="font-size: 12px;">${error.message}</span>
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div>
+              <span class="ticker">${data.ticker}</span>
+              <div style="margin-top: 8px;"><span class="rating ${ratingClass}">${data.genius_rating}</span></div>
+            </div>
+            <div class="position-size">${data.position_pct}%</div>
+          </div>
+          <div class="stats-grid">
+            <div><div class="text-muted">WILSON SCORE</div><div style="font-size: 24px; font-weight: 700;">${data.win_rate}%</div><div class="text-muted">${data.total_trades} trades</div></div>
+            <div><div class="text-muted">EXCESS vs SPY</div><div style="font-size: 24px; font-weight: 700; color:#00ff88;">+${data.excess_vs_spy}%</div></div>
+            <div><div class="text-muted">MAX DRAWDOWN</div><div style="font-size: 24px; font-weight: 700;">${data.max_drawdown}%</div></div>
+          </div>
+          <div style="background: #0f0f14; padding: 12px; border-radius: 12px; margin-top: 8px;">
+            <div class="text-muted">📊 QUANT INTERPRETATION</div>
+            <div style="font-size: 13px; margin-top: 6px;">
+              ${data.genius_rating === '🔥 TOP' ? 'Statistically significant at 95% confidence. Position size: 5%.' :
+                data.genius_rating === '✅ GOOD' ? 'Positive edge detected. Position size: 2.5%.' :
+                data.genius_rating === '⚠️ SMALL' ? 'Limited sample. Position size: 1%.' :
+                'Insufficient evidence. Avoid.'}
+            </div>
+          </div>
+          <div class="text-muted" style="margin-top: 12px; text-align: right;">💰 Current price: $${data.current_price || 'N/A'}</div>
         </div>
       `;
+    } catch (error) {
+      container.innerHTML = `<div class="error">⚠️ Error: ${error.message}</div>`;
     }
   }
   
-  // ============================================================
-  // RENDER INDIVIDUAL SIGNAL
-  // ============================================================
-  function renderSignal(data) {
-    const ratingClass = 
-      data.genius_rating === '🔥 TOP' ? 'rating-top' :
-      data.genius_rating === '✅ GOOD' ? 'rating-good' :
-      data.genius_rating === '⚠️ SMALL' ? 'rating-small' : 'rating-avoid';
-    
-    const borderColor = 
-      data.genius_rating === '🔥 TOP' ? '#ff4466' :
-      data.genius_rating === '✅ GOOD' ? '#00ff88' :
-      data.genius_rating === '⚠️ SMALL' ? '#ffaa00' : '#64748b';
-    
-    const html = `
-      <div class="result-card" style="border-left: 4px solid ${borderColor};">
-        <div class="row">
-          <div>
-            <span class="ticker">${data.ticker}</span>
-            <div style="margin-top: 8px;">
-              <span class="rating ${ratingClass}">${data.genius_rating}</span>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div class="position-size">${data.position_pct}%</div>
-            <div style="font-size: 11px; color: #64748b;">POSITION SIZE</div>
-          </div>
-        </div>
-        
-        <div class="stats-grid">
-          <div>
-            <div class="stat-label">WILSON SCORE</div>
-            <div class="stat-value">${data.win_rate}%</div>
-            <div style="font-size: 10px; color:#64748b;">${data.total_trades} trades analyzed</div>
-          </div>
-          <div>
-            <div class="stat-label">EXCESS vs S&P 500</div>
-            <div class="stat-value">${data.excess_vs_spy >= 0 ? '+' : ''}${data.excess_vs_spy}%</div>
-            <div style="font-size: 10px; color:#64748b;">avg per trade</div>
-          </div>
-          <div>
-            <div class="stat-label">MAX DRAWDOWN</div>
-            <div class="stat-value">${data.max_drawdown}%</div>
-            <div style="font-size: 10px; color:#64748b;">historical worst</div>
-          </div>
-        </div>
-        
-        <div class="divider"></div>
-        
-        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <div style="font-size: 11px; color:#64748b;">RECOMMENDED ACTION</div>
-            <div style="font-weight: bold; font-size: 16px; color:#00ff88;">
-              ${data.position_pct >= 5 ? '🔥 STRONG BUY' : data.position_pct >= 2.5 ? '✅ BUY' : data.position_pct >= 1 ? '⚠️ SPECULATIVE' : '❌ AVOID'}
-            </div>
-          </div>
-          <div>
-            <div style="font-size: 11px; color:#64748b;">CURRENT PRICE</div>
-            <div style="font-family: monospace; font-size: 18px; font-weight: 700; color:#00ff88;">$${data.current_price || 'N/A'}</div>
-          </div>
-        </div>
-        
-        <div style="margin-top: 16px; background: #0a0a0f; border-radius: 12px; padding: 12px;">
-          <div style="font-size: 11px; color:#00ff88;">📘 QUANT INTERPRETATION</div>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
-            ${data.genius_rating === '🔥 TOP' ? 'Statistically significant at 95% confidence. High win rate + strong excess returns. Size 5% of portfolio.' :
-              data.genius_rating === '✅ GOOD' ? 'Positive edge detected. Statistically reliable pattern. Size 2.5% of portfolio.' :
-              data.genius_rating === '⚠️ SMALL' ? 'Signal has promise but limited sample. Size ≤1% of portfolio.' :
-              'Insufficient statistical evidence. Avoid or wait for more data.'}
-          </div>
-        </div>
-        
-        <div style="margin-top: 12px; font-size: 10px; color:#64748b; text-align: right;">
-          ⏱ ${new Date(data.timestamp).toLocaleString()}
-        </div>
-      </div>
-    `;
-    
-    document.getElementById('resultContainer').innerHTML = html;
-  }
-  
-  // ============================================================
-  // EVENT HANDLERS
-  // ============================================================
-  const fetchBtn = document.getElementById('fetchBtn');
-  const tickerInput = document.getElementById('tickerInput');
-  
-  fetchBtn.addEventListener('click', () => {
-    const ticker = tickerInput.value.trim();
+  document.getElementById('fetchBtn').onclick = () => {
+    const ticker = document.getElementById('tickerInput').value.trim();
     if (ticker) fetchSignal(ticker);
-  });
+  };
+  document.getElementById('tickerInput').onkeypress = (e) => {
+    if (e.key === 'Enter') fetchSignal(e.target.value.trim());
+  };
   
-  tickerInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      const ticker = tickerInput.value.trim();
-      if (ticker) fetchSignal(ticker);
-    }
+  // Initialize
+  testBackend().then(() => {
+    fetchTop10();
+    fetchSignal('NVDA');
   });
-  
-  // ============================================================
-  // INITIAL LOAD
-  // ============================================================
-  fetchTop10();
-  fetchSignal('NVDA');
 </script>
 </body>
 </html>
