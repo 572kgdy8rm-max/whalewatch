@@ -132,4 +132,4 @@ async def get_live_price(ticker: str):
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Price fetch failed: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Price fetch failed: {str(e)}") 
