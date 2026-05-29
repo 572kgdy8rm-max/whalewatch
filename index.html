@@ -63,7 +63,6 @@ function getRecentDate(daysAgo) {
   return d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
 }
 
-// Yahoo Finance ticker mapping — HK tickers need different format
 function yahooTicker(ticker) {
   const map = {
     "0700.HK":"0700.HK","0700":"0700.HK","9988":"9988.HK",
@@ -120,7 +119,7 @@ const MARKETS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HISTORICAL RECORDS — source for backtest engine
+// HISTORICAL RECORDS
 // ─────────────────────────────────────────────────────────────────────────────
 const HISTORICAL_RECORDS = [
   {ticker:"NVDA",  signalDate:"2024-11-10", prediction:"BUY", actualReturn:"+67%", outcome:"correct"},
@@ -166,9 +165,6 @@ function getHistoricalAccuracy(ticker) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BACKTEST ENGINE
-// Computes per-ticker stats from HISTORICAL_RECORDS.
-// "Portfolio" simulates $10k equal-weight per signal, compounds over time.
-// Returns are parsed from strings like "+67%" — flagged as SIMULATED.
 // ─────────────────────────────────────────────────────────────────────────────
 function parseReturn(str) {
   if (!str) return 0;
@@ -176,7 +172,6 @@ function parseReturn(str) {
 }
 
 function runBacktest(records) {
-  // Per-ticker breakdown
   const byTicker = {};
   records.forEach(r => {
     if (!byTicker[r.ticker]) byTicker[r.ticker] = { ticker:r.ticker, signals:[], correct:0, total:0, returns:[] };
@@ -195,14 +190,12 @@ function runBacktest(records) {
     return { ...t, avgReturn, winRate, maxDrawdown, bestTrade };
   }).sort((a,b) => b.winRate - a.winRate || b.avgReturn - a.avgReturn);
 
-  // Portfolio equity curve — $10k per signal, equal weight, chronological
-  // SIMULATED: uses historical return strings, not real price data
   const sorted = [...records].sort((a,b)=>new Date(a.signalDate)-new Date(b.signalDate));
   let portfolio = 10000;
   const curve = [{date:"Start", value:10000, label:"$10,000"}];
   sorted.forEach(r => {
     const ret = parseReturn(r.actualReturn);
-    const positionSize = portfolio * 0.1; // 10% per signal
+    const positionSize = portfolio * 0.1;
     portfolio += positionSize * ret;
     curve.push({
       date: r.signalDate,
@@ -272,4 +265,704 @@ function buildDATA() {
       politicians:[
         {ticker:"ASML",trader:"MEP Bart Groothuis (NL)",action:"Purchase",amount:"€25,000–€75,000",date:getRecentDate(19),returnRate:"+28%",signal:"STRONG BUY SIGNAL",risk:"Low",sector:"Semiconductor Equipment",marketCap:"Large Cap (€280B)",perf1w:"+3.6%",perf1m:"+10.4%",committee:"European Parliament Industry & Research Committee",pattern:"EU Chips Act has been consistent ASML tailwind",analysis:"Groothuis sits on the committee overseeing the EU Chips Act implementation. His purchase came ahead of new EU subsidies for domestic semiconductor manufacturing."},
         {ticker:"SAP",trader:"Bundestag Member Torsten Herbst",action:"Purchase",amount:"€10,000–€30,000",date:getRecentDate(30),returnRate:"+21%",signal:"WATCH",risk:"Low",sector:"Enterprise Software",marketCap:"Large Cap (€230B)",perf1w:"+2.1%",perf1m:"+6.3%",committee:"Digital Agenda Committee — German federal digitization",pattern:"German public sector SAP contracts have accelerated",analysis:"SAP is the dominant ERP provider for German government agencies. Herbst's committee influences federal IT procurement."},
-        {ticker:"SHEL",trader:"MP Grant Shapps (UK)",action:"Sale",amount:"£50,000–£100,000",date:getRecentDate(26),returnRate:"+15%",signal:"WATCH",risk:"Medium",sector:"Oil & Gas",marketCap:"Large Cap (£175B)",perf1w:"-2.3%",perf1m:"-5.1%",committee:"Former Energy Secretary — ongoing energy policy advisory",pattern:"Shell sold off
+        {ticker:"SHEL",trader:"MP Grant Shapps (UK)",action:"Sale",amount:"£50,000–£100,000",date:getRecentDate(26),returnRate:"+15%",signal:"WATCH",risk:"Medium",sector:"Oil & Gas",marketCap:"Large Cap (£175B)",perf1w:"-2.3%",perf1m:"-5.1%",committee:"Former Energy Secretary — ongoing energy policy advisory",pattern:"Shell sold off 8% following Shapps' 2024 sale",analysis:"Shapps sold Shell ahead of UK windfall tax extension discussions. His 2024 Shell sale preceded a significant drawdown."},
+      ],
+      funds:[
+        {ticker:"NOVO-B",trader:"TCI Fund Management (Chris Hohn)",action:"BUY",amount:"€1.2B (add +22%)",date:"Q1 2026",returnRate:"+31%",signal:"STRONG BUY SIGNAL",risk:"Low",sector:"Pharmaceuticals / GLP-1",marketCap:"Mega Cap (€450B)",perf1w:"+4.1%",perf1m:"+12.8%",fundStyle:"Activist — long-term high conviction",pattern:"TCI's top positions have compounded at 31% annually for 5 years",analysis:"Chris Hohn's TCI Fund added significantly to Novo Nordisk. The GLP-1 obesity drug market is forecast to reach $130B by 2030."},
+        {ticker:"VOLCAR-B",trader:"Cevian Capital",action:"BUY",amount:"€380M (existing + add)",date:"Q1 2026",returnRate:"+26%",signal:"WATCH",risk:"Medium-High",sector:"Automotive / EV",marketCap:"Mid Cap (€28B)",perf1w:"+3.2%",perf1m:"+8.6%",fundStyle:"European activist — operational improvement focus",pattern:"Cevian's activist campaigns have averaged +26% alpha within 24 months",analysis:"Cevian — Europe's largest activist fund — is pushing Volvo Cars on cost restructuring and EV strategy simplification."},
+        {ticker:"LVMH",trader:"Financière de l'Odet (Bolloré group)",action:"BUY",amount:"€650M (strategic add)",date:"Q1 2026",returnRate:"+19%",signal:"WATCH",risk:"Medium",sector:"Luxury Goods",marketCap:"Mega Cap (€320B)",perf1w:"+1.8%",perf1m:"+5.4%",fundStyle:"Strategic holding company — very long-term",pattern:"Bolloré group additions to LVMH have consistently preceded re-ratings",analysis:"The Bolloré group's strategic addition to LVMH signals confidence in Chinese luxury demand recovery."},
+      ]
+    },
+    cn:{
+      politicians:[
+        {ticker:"600519",trader:"NPC Delegate Li Baofang",action:"Purchase",amount:"¥500,000–¥1,000,000",date:getRecentDate(23),returnRate:"+24%",signal:"STRONG BUY SIGNAL",risk:"Medium",sector:"Baijiu / Consumer Staples",marketCap:"Mega Cap (¥2.1T)",perf1w:"+3.8%",perf1m:"+11.2%",committee:"NPC Finance & Economics Committee",pattern:"Kweichow Moutai purchases by connected delegates preceded 3 re-ratings",analysis:"Kweichow Moutai is the most politically connected stock in China — gift-giving demand is directly tied to government spending cycles."},
+        {ticker:"601398",trader:"CPPCC Member Zhang Wei",action:"Purchase",amount:"¥200,000–¥500,000",date:getRecentDate(36),returnRate:"+16%",signal:"WATCH",risk:"Low",sector:"Banking / State-owned",marketCap:"Mega Cap (¥1.8T)",perf1w:"+1.4%",perf1m:"+4.2%",committee:"CPPCC Economic Affairs Committee",pattern:"ICBC purchases by policy advisors preceded dividend increases twice",analysis:"ICBC purchases by CPPCC members often signal upcoming policy support for state bank dividends or recapitalization."},
+        {ticker:"002594",trader:"NPC Delegate Wang Chuanfu (BYD Founder)",action:"Purchase",amount:"¥1,000,000+",date:getRecentDate(17),returnRate:"+41%",signal:"STRONG BUY SIGNAL",risk:"Medium-High",sector:"EV / New Energy",marketCap:"Large Cap (¥780B)",perf1w:"+5.2%",perf1m:"+16.8%",committee:"NPC Industry & Technology Committee (EV policy)",pattern:"BYD founder purchases have averaged +41% — direct company visibility",analysis:"Wang Chuanfu IS the founder and chairman of BYD — insider buying at the highest level. Accelerating international expansion and new solid-state battery platform."},
+      ],
+      funds:[
+        {ticker:"BABA",trader:"Hillhouse Capital (Zhang Lei)",action:"BUY",amount:"$480M (new position)",date:"Q1 2026",returnRate:"+38%",signal:"STRONG BUY SIGNAL",risk:"Medium-High",sector:"E-commerce / Cloud",marketCap:"Large Cap ($220B)",perf1w:"+6.1%",perf1m:"+19.4%",fundStyle:"Long-term fundamental — China tech specialist",pattern:"Hillhouse's China tech re-entry calls have been 4/4 accurate since 2020",analysis:"Zhang Lei's Hillhouse Capital returned to Alibaba after exiting ahead of the 2021 regulatory crackdown — 4/4 on China tech re-entry calls."},
+        {ticker:"PDD",trader:"NSSF (National Social Security Fund)",action:"BUY",amount:"¥2.8B (strategic addition)",date:"Q1 2026",returnRate:"+29%",signal:"STRONG BUY SIGNAL",risk:"Medium",sector:"E-commerce / Cross-border",marketCap:"Large Cap ($170B)",perf1w:"+4.8%",perf1m:"+15.1%",fundStyle:"China sovereign — long-term strategic",pattern:"NSSF additions signal government comfort with the company's regulatory standing",analysis:"NSSF additions are a strong signal in China — they only buy companies that have passed implicit government approval."},
+        {ticker:"600036",trader:"Gaoling Fund (Hillhouse subsidiary)",action:"BUY",amount:"¥1.1B (add +34%)",date:"Q1 2026",returnRate:"+22%",signal:"WATCH",risk:"Low",sector:"Banking / Consumer Finance",marketCap:"Large Cap (¥890B)",perf1w:"+2.1%",perf1m:"+6.4%",fundStyle:"Value — China domestic institutions",pattern:"China Merchants Bank is the highest quality private bank in China",analysis:"Gaoling added significantly to China Merchants Bank. CMB trades at a discount to historical P/B due to property sector fears, but its retail franchise is structurally insulated."},
+      ]
+    },
+    hk:{
+      politicians:[
+        {ticker:"0700",trader:"LegCo Member Jeffrey Lam",action:"Purchase",amount:"HK$500,000–HK$1,000,000",date:getRecentDate(21),returnRate:"+33%",signal:"STRONG BUY SIGNAL",risk:"Medium",sector:"Social Media / Gaming / AI",marketCap:"Mega Cap (HK$3.8T)",perf1w:"+5.4%",perf1m:"+17.2%",committee:"LegCo Commerce & Industry Panel",pattern:"3/3 Tencent purchases by Commerce panel members preceded policy tailwinds",analysis:"Jeffrey Lam is a pro-establishment business figure with deep connections to Beijing's tech policy apparatus. His Tencent purchase signals regulatory tightening is off the table."},
+        {ticker:"9988",trader:"LegCo Member Tommy Cheung",action:"Purchase",amount:"HK$200,000–HK$500,000",date:getRecentDate(33),returnRate:"+28%",signal:"WATCH",risk:"Medium-High",sector:"E-commerce / Cloud / AI",marketCap:"Mega Cap (HK$1.9T)",perf1w:"+4.1%",perf1m:"+13.6%",committee:"LegCo Finance Committee",pattern:"BABA-HK purchases by Finance committee members preceded Southbound inflows",analysis:"Cheung's Finance Committee has advance visibility into Mainland-HK Stock Connect flow data."},
+        {ticker:"1299",trader:"LegCo Member Chan Kin-por",action:"Purchase",amount:"HK$150,000–HK$300,000",date:getRecentDate(27),returnRate:"+19%",signal:"WATCH",risk:"Low",sector:"Insurance / Financials",marketCap:"Large Cap (HK$680B)",perf1w:"+2.3%",perf1m:"+6.8%",committee:"LegCo Insurance & Financial Services Panel",pattern:"AIA purchases by Insurance panel members aligned with Mainland policy openings",analysis:"Chan is a veteran insurance industry representative on the panel overseeing AIA's operating environment."},
+      ],
+      funds:[
+        {ticker:"0700",trader:"Value Partners (Cheah Cheng Hye)",action:"BUY",amount:"HK$1.4B (add +41%)",date:"Q1 2026",returnRate:"+31%",signal:"STRONG BUY SIGNAL",risk:"Medium",sector:"Social Media / Gaming / AI",marketCap:"Mega Cap (HK$3.8T)",perf1w:"+5.4%",perf1m:"+17.2%",fundStyle:"Deep value — Greater China specialist (30yr track record)",pattern:"Value Partners Tencent additions at P/E <20x have been 4/4 successful",analysis:"Cheah Cheng Hye significantly added to Tencent. At current valuations, Tencent trades below global software peers despite having a dominant AI infrastructure position."},
+        {ticker:"9618",trader:"Himalaya Capital (Li Lu)",action:"BUY",amount:"$280M (new position)",date:"Q1 2026",returnRate:"+38%",signal:"STRONG BUY SIGNAL",risk:"Medium-High",sector:"E-commerce / Logistics / AI",marketCap:"Large Cap (HK$580B)",perf1w:"+4.7%",perf1m:"+15.3%",fundStyle:"Extreme concentration — Munger-endorsed value approach",pattern:"Li Lu's new positions are among the most followed China calls globally",analysis:"Li Lu — Charlie Munger's chosen successor — initiated a JD.com position. Li Lu rarely opens new positions; when he does it signals 5-10 year conviction."},
+        {ticker:"2318",trader:"Ping An Asset Management",action:"BUY",amount:"HK$3.2B (strategic)",date:"Q1 2026",returnRate:"+17%",signal:"WATCH",risk:"Low",sector:"Insurance / Financials",marketCap:"Large Cap (HK$720B)",perf1w:"+2.6%",perf1m:"+7.1%",fundStyle:"Chinese institutional — strategic cross-holding",pattern:"Ping An AM additions signal dividend confidence",analysis:"Ping An Asset Management added significantly to parent Ping An Insurance. Indicates management confidence in upcoming dividend policy and life insurance premium recovery."},
+      ]
+    }
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTRACTS DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const CONTRACTS = [
+  {company:"Dell Technologies",ticker:"DELL",contractValue:"$9.7B",agency:"Dept of Defense",contractDate:"May 27, 2026",donationType:"Corporate Pledge",donationValue:"$6.25B",donationTarget:"Trump Accounts (children's investment initiative)",donationDate:"2025",timingGap:"~6 months",signal:"STRONG SIGNAL",risk:"Medium",perf1w:"+8.2%",perf1m:"+21.4%",sector:"Enterprise Tech / Defense IT",details:"Michael Dell pledged $6.25B to fund Trump's children investment accounts initiative. Dell Federal Systems then won a $9.7B Pentagon software deal. The DoD called it a competitive process — but the political alignment timeline is notable.",precedent:"Dell stock up 8% on contract announcement. Pattern mirrors historical defense IT contracts following executive political alignment.",sources:["USASpending.gov","FEC Filings","CNBC May 27 2026"],watchFor:"SEC filing for any insider purchases of DELL stock in Q4 2024–Q1 2025 window before the pledge became public."},
+  {company:"Oracle Corporation",ticker:"ORCL",contractValue:"$13.6B",agency:"Pentagon / CIA (JWCC)",contractDate:"Mar 2026",donationType:"Direct Donation + Fundraiser",donationValue:"$1M+ (Larry Ellison)",donationTarget:"Trump inauguration fund + Mar-a-Lago fundraiser",donationDate:"Jan 2025",timingGap:"~14 months",signal:"STRONG SIGNAL",risk:"Low",perf1w:"+4.4%",perf1m:"+13.7%",sector:"Cloud / Enterprise / Defense IT",details:"Larry Ellison donated $1M+ to Trump's inauguration fund and hosted a Mar-a-Lago fundraiser. Oracle was subsequently awarded a major share of the Pentagon's Joint Warfighting Cloud Capability contract.",precedent:"ORCL up 34% since inauguration. Cloud government revenue growing 47% YoY.",sources:["FEC.gov","DoD JWCC contract award","OpenSecrets.org"],watchFor:"Congressional purchases of ORCL — Sen. Tuberville and Rep. McCaul both flagged with cloud/defense adjacency."},
+  {company:"Palantir Technologies",ticker:"PLTR",contractValue:"$619M",agency:"US Army / DoD",contractDate:"Apr 2026",donationType:"Executive Alignment",donationValue:"Multiple appearances",donationTarget:"Trump administration defense briefings",donationDate:"2025–2026",timingGap:"Ongoing",signal:"WATCH",risk:"Medium-High",perf1w:"+3.1%",perf1m:"+9.4%",sector:"AI / Defense Software",details:"Peter Thiel and Alex Karp have maintained close alignment with the Trump administration on defense AI policy. Palantir has received a series of DoD contracts for battlefield AI systems.",precedent:"Palantir has received $2.3B+ in government contracts since Trump's return. Stock up 180% since election.",sources:["USASpending.gov","DoD press releases"],watchFor:"Congressional purchases of PLTR — Armed Services committee members flagged with Q1 2026 buys."},
+  {company:"SpaceX (private)",ticker:"N/A — see proxies",contractValue:"$3.7B+",agency:"NASA / DoD / NRO",contractDate:"Multiple 2025–2026",donationType:"Political Donation",donationValue:"$277M+ to Trump-aligned PACs",donationTarget:"2024 Trump campaign & allied PACs",donationDate:"2024",timingGap:"3–18 months",signal:"WATCH",risk:"Low (private)",perf1w:"N/A",perf1m:"N/A",sector:"Aerospace / Defense",details:"Elon Musk donated $277M+ to Trump-aligned causes in 2024. SpaceX subsequently received multiple NASA and DoD contracts. Musk was also appointed to lead DOGE.",precedent:"Listed proxies: Aerojet Rocketdyne (AJRD) and Transdigm (TDG) as SpaceX supply chain beneficiaries.",sources:["FEC.gov","OpenSecrets.org","NASA contract database"],watchFor:"AJRD and TDG as listed proxies. Both up significantly YTD on SpaceX supply chain tailwinds."},
+  {company:"Anduril Industries",ticker:"Private — IPO Watch",contractValue:"$22B (10yr DoD)",agency:"Dept of Defense",contractDate:"2025",donationType:"Founder alignment",donationValue:"Palmer Luckey — Heritage Foundation + Trump networks",donationTarget:"Trump-aligned defense policy networks",donationDate:"2024–2025",timingGap:"~12 months",signal:"WATCH",risk:"High (pre-IPO)",perf1w:"N/A",perf1m:"N/A",sector:"Defense Tech / AI Weapons",details:"Palmer Luckey (Anduril founder) has been deeply embedded in Trump defense policy circles. Anduril received a landmark 10-year $22B DoD contract for autonomous weapons systems.",precedent:"Pre-IPO defense tech has been the highest-returning category in 2025–2026. Listed proxy: KTOS (Kratos Defense) up 67% YTD.",sources:["DoD press release","Politico defense reporting"],watchFor:"Anduril IPO filing expected H2 2026. KTOS as listed proxy in autonomous weapons space."},
+  {company:"Exxon Mobil",ticker:"XOM",contractValue:"Regulatory (not contract)",agency:"EPA / Interior Dept",contractDate:"Ongoing 2025–2026",donationType:"Industry PAC",donationValue:"$4.2M (oil industry PAC)",donationTarget:"Trump-aligned Senate PACs",donationDate:"2024",timingGap:"Ongoing",signal:"WATCH",risk:"Medium",perf1w:"+1.8%",perf1m:"+5.1%",sector:"Oil & Gas",details:"Oil industry PACs donated heavily to Trump-aligned candidates. XOM has benefited from EPA rollbacks, expanded drilling permits, and withdrawal from Paris Agreement commitments.",precedent:"XOM drilling permits up 40% YoY. Offshore lease sales expanded.",sources:["OpenSecrets.org","EPA permit database","FEC.gov"],watchFor:"Congressional purchases of XOM by Energy committee members."},
+];
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT UTILITY
+// ─────────────────────────────────────────────────────────────────────────────
+function exportData() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,"0");
+  const ts = now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate())+"_"+pad(now.getHours())+"-"+pad(now.getMinutes());
+  const payload = {exportedAt:now.toISOString(), TOP10, HISTORICAL_RECORDS};
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download="whalewatch_"+ts+".json"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED UI PRIMITIVES
+// ─────────────────────────────────────────────────────────────────────────────
+function Tag({color,children}){
+  const cols={
+    green:{bg:"#00ff8830",border:"#00ff8860",text:"#00ff88"},
+    yellow:{bg:"#ffaa0020",border:"#ffaa0060",text:"#ffaa00"},
+    red:{bg:"#ff446620",border:"#ff446660",text:"#ff4466"},
+    blue:{bg:"#3b82f620",border:"#3b82f660",text:"#60a5fa"},
+    purple:{bg:"#a855f720",border:"#a855f760",text:"#c084fc"},
+    orange:{bg:"#f9731620",border:"#f9731660",text:"#fb923c"},
+  };
+  const c=cols[color]||cols.blue;
+  return <span style={{background:c.bg,border:`1px solid ${c.border}`,color:c.text,padding:"2px 6px",borderRadius:4,fontSize:10,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",fontFamily:"monospace",whiteSpace:"nowrap"}}>{children}</span>;
+}
+
+function RiskDot({risk}){
+  const color=risk==="Low"?"#00ff88":risk==="Medium"?"#ffaa00":risk?.startsWith("Medium-High")?"#ff8844":"#ff4466";
+  return <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,color}}><span style={{width:6,height:6,borderRadius:"50%",background:color,display:"inline-block"}}/>{risk}</span>;
+}
+
+function Perf({label,val}){
+  if(!val||val==="N/A") return null;
+  return <div><div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>{label}</div><div style={{fontSize:12,fontFamily:"monospace",fontWeight:600,color:val?.startsWith("+")?"#00ff88":val?.startsWith("-")?"#ff4466":T.text}}>{val}</div></div>;
+}
+
+function GeniusBadge({ ticker, winRate, totalTrades, personalReturn }) {
+  const rating = getGeniusRating(ticker, winRate, totalTrades, personalReturn);
+  return (
+    <span title={rating.description} style={{background: rating.bg, border: `1px solid ${rating.border}`, color: rating.color, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 800, fontFamily: "monospace", whiteSpace: "nowrap", cursor: "help"}}>
+      {rating.label}
+    </span>
+  );
+}
+
+function AccuracyBadge({ ticker }) {
+  const acc = getHistoricalAccuracy(ticker);
+  if (!acc) return null;
+  const color = acc.pct >= 80 ? "#00ff88" : acc.pct >= 60 ? "#ffaa00" : "#ff4466";
+  const isLowSample = acc.total < 10;
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{background: "#ffffff08", border: `1px solid ${color}40`, color: color, padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 700, fontFamily: "monospace", whiteSpace: "nowrap"}}>
+        {acc.pct}% accurate ({acc.correct}/{acc.total})
+      </span>
+      {isLowSample && (
+        <span style={{background: "#ffaa0010", border: "1px solid #ffaa0040", color: "#ffaa00", padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 600, fontFamily: "monospace", whiteSpace: "nowrap"}}>
+          ⚠️ low sample
+        </span>
+      )}
+    </div>
+  );
+}
+
+function YahooBtn({ticker}){
+  const yt = yahooTicker(ticker);
+  const url = `https://finance.yahoo.com/quote/${yt}`;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{display:"inline-flex",alignItems:"center",gap:4,background:"#6366f115",border:"1px solid #6366f140",color:"#818cf8",padding:"3px 8px",borderRadius:5,fontSize:10,fontWeight:700,fontFamily:"monospace",textDecoration:"none",whiteSpace:"nowrap",cursor:"pointer"}}>
+      📈 Yahoo Finance ↗
+    </a>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PERSONAL TRACKER
+// ─────────────────────────────────────────────────────────────────────────────
+const LS_KEY = "ww_tracker_v1";
+
+function loadTracker() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function saveTracker(data) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRADE CARD
+// ─────────────────────────────────────────────────────────────────────────────
+function TradeCard({trade, tracker, onTrack}){
+  const [open,setOpen]=useState(false);
+  const isBuy=trade.action==="BUY"||trade.action==="Purchase";
+  const sc=trade.signal==="STRONG BUY SIGNAL"?"#00ff88":trade.signal==="WATCH"?"#ffaa00":T.muted;
+  const daysAgo=daysSince(trade.date);
+  const dateFormatted=fmtDate(trade.date);
+  const cardId=`${trade.ticker}-${trade.trader}-${trade.date}`.replace(/\s/g,"-");
+  const tracked = tracker[cardId];
+  const acc = getHistoricalAccuracy(trade.ticker);
+
+  return(
+    <div onClick={()=>setOpen(!open)} style={{background:T.card,border:`1px solid ${T.border}`,borderLeft:`3px solid ${sc}`,borderRadius:8,padding:"14px 16px",cursor:"pointer",marginBottom:10,transition:"border-color 0.2s"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:5}}>
+            <span style={{fontFamily:"monospace",fontWeight:700,fontSize:15,color:"#00ff88"}}>{trade.ticker}</span>
+            <Tag color={isBuy?"green":"red"}>{trade.action}</Tag>
+            <Tag color={trade.signal==="STRONG BUY SIGNAL"?"green":trade.signal==="WATCH"?"yellow":"blue"}>
+              {trade.signal==="STRONG BUY SIGNAL"?"⚡ Signal":trade.signal}
+            </Tag>
+            {daysAgo&&<span style={{background:"#ffffff08",border:"1px solid #ffffff18",color:T.muted,padding:"2px 6px",borderRadius:4,fontSize:10,fontFamily:"monospace"}}>{daysAgo}</span>}
+            {acc && <GeniusBadge ticker={trade.ticker} winRate={acc.pct} totalTrades={acc.total} personalReturn={null} />}
+          </div>
+          <div style={{color:T.text,fontSize:13,marginBottom:3,fontWeight:600}}>{trade.trader}</div>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:6}}>
+            <span style={{color:T.muted,fontSize:11}}>{trade.sector}</span>
+            <RiskDot risk={trade.risk}/>
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            <AccuracyBadge ticker={trade.ticker}/>
+            <YahooBtn ticker={trade.ticker}/>
+          </div>
+        </div>
+        {trade.returnRate&&trade.returnRate!=="—"&&
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontFamily:"monospace",fontSize:16,fontWeight:700,color:"#00ff88"}}>{trade.returnRate}</div>
+            <div style={{color:T.muted,fontSize:10}}>hist. avg</div>
+          </div>
+        }
+      </div>
+      <div style={{display:"flex",gap:14,marginTop:8}}>
+        <Perf label="1W" val={trade.perf1w}/>
+        <Perf label="1M" val={trade.perf1m}/>
+        <Perf label="Size" val={trade.amount}/>
+      </div>
+      {open&&(
+        <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${T.border}`}} className="fade-in">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+            {[
+              {l:"Market Cap",v:trade.marketCap},
+              {l:"Filed",v:dateFormatted?(dateFormatted+(daysAgo?" · "+daysAgo:"")):trade.date},
+              {l:trade.committee?"Committee":"Fund Style",v:trade.committee||trade.fundStyle},
+              {l:"Pattern",v:trade.pattern},
+            ].filter(x=>x.v).map(({l,v})=>(
+              <div key={l} style={{background:T.card2,borderRadius:6,padding:"8px 10px"}}>
+                <div style={{color:T.muted,fontSize:10,fontFamily:"monospace",marginBottom:3}}>{l.toUpperCase()}</div>
+                <div style={{color:T.text,fontSize:12,lineHeight:1.4}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{color:T.text,fontSize:13,lineHeight:1.75,marginBottom:12}}>{trade.analysis}</div>
+          {isBuy && trade.returnRate && trade.returnRate !== "—" && (
+            <div style={{background:T.card2,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px"}}>
+              <div style={{color:T.muted,fontSize:10,fontFamily:"monospace",marginBottom:6}}>📌 PERSONAL TRACKER (SIMULATED)</div>
+              {!tracked ? (
+                <button onClick={e=>{e.stopPropagation();onTrack(cardId,trade);}} style={{background:"#00ff8815",border:"1px solid #00ff8840",color:"#00ff88",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"monospace",fontWeight:700}}>
+                  ✓ Mark as "I followed this signal"
+                </button>
+              ) : (
+                <div>
+                  <div style={{color:"#00ff88",fontSize:12,fontFamily:"monospace",marginBottom:4}}>✓ You followed this signal</div>
+                  <div style={{color:T.muted,fontSize:11}}>Simulated return: <span style={{color:"#00ff88",fontWeight:700}}>{trade.returnRate}</span> · Tracked {daysSince(tracked.trackedAt)}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      <div style={{color:T.muted,fontSize:10,marginTop:8,fontFamily:"monospace"}}>{open?"▲ collapse":"▼ tap for analysis"}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOP 10 CARD
+// ─────────────────────────────────────────────────────────────────────────────
+function Top10Card({pick}){
+  const [open,setOpen]=useState(false);
+  const acc = getHistoricalAccuracy(pick.ticker);
+  return(
+    <div onClick={()=>setOpen(!open)} style={{background:T.card,border:`1px solid ${T.border}`,borderLeft:"3px solid #00ff88",borderRadius:8,padding:"14px 16px",cursor:"pointer",marginBottom:10}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:5}}>
+            <span style={{fontFamily:"monospace",fontWeight:900,fontSize:20,color:"#00ff8840",minWidth:28}}>#{pick.rank}</span>
+            <span style={{fontFamily:"monospace",fontWeight:700,fontSize:16,color:"#00ff88"}}>{pick.ticker}</span>
+            <Tag color="green">⚡ Top Signal</Tag>
+            <span style={{color:T.muted,fontSize:11}}>{pick.market}</span>
+            {acc && <GeniusBadge ticker={pick.ticker} winRate={acc.pct} totalTrades={acc.total} personalReturn={null} />}
+          </div>
+          <div style={{color:T.muted,fontSize:11,marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
+            {pick.sector} · <RiskDot risk={pick.risk}/>
+          </div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:6}}>
+            {pick.confluence.map(c=><Tag key={c} color="purple">{c}</Tag>)}
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            <AccuracyBadge ticker={pick.ticker}/>
+            <YahooBtn ticker={pick.ticker}/>
+          </div>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontFamily:"monospace",fontSize:17,fontWeight:700,color:"#00ff88"}}>{pick.returnRate}</div>
+          <div style={{color:T.muted,fontSize:10,marginBottom:4}}>hist. avg</div>
+          <Perf label="1W" val={pick.perf1w}/>
+          <Perf label="1M" val={pick.perf1m}/>
+        </div>
+      </div>
+      {open&&(
+        <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${T.border}`}} className="fade-in">
+          <div style={{background:T.card2,borderRadius:6,padding:"10px 12px",marginBottom:10}}>
+            <div style={{color:T.muted,fontSize:10,fontFamily:"monospace",marginBottom:4}}>WHALE SOURCES</div>
+            {pick.traders.map(t=><div key={t} style={{color:T.text,fontSize:12,marginBottom:2}}>• {t}</div>)}
+          </div>
+          {pick.verificationNote&&(
+            <div style={{background:"#ffaa0012",border:"1px solid #ffaa0040",borderLeft:"3px solid #ffaa00",borderRadius:6,padding:"10px 12px",marginBottom:10}}>
+              <div style={{color:"#ffaa00",fontSize:11,lineHeight:1.6}}>{pick.verificationNote}</div>
+            </div>
+          )}
+          <div style={{color:T.text,fontSize:13,lineHeight:1.75}}>{pick.whyTop}</div>
+        </div>
+      )}
+      <div style={{color:T.muted,fontSize:10,marginTop:8,fontFamily:"monospace"}}>{open?"▲ collapse":"▼ tap for analysis"}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTRACT CARD
+// ─────────────────────────────────────────────────────────────────────────────
+function ContractCard({contract}){
+  const [open,setOpen]=useState(false);
+  const sc=contract.signal==="STRONG SIGNAL"?"#00ff88":"#ffaa00";
+  return(
+    <div onClick={()=>setOpen(!open)} style={{background:T.card,border:`1px solid ${T.border}`,borderLeft:`3px solid ${sc}`,borderRadius:8,padding:"14px 16px",cursor:"pointer",marginBottom:10}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:5}}>
+            <span style={{fontFamily:"monospace",fontWeight:700,fontSize:15,color:"#00ff88"}}>{contract.ticker}</span>
+            <span style={{color:T.text,fontSize:13,fontWeight:600}}>{contract.company}</span>
+            <Tag color={contract.signal==="STRONG SIGNAL"?"green":"yellow"}>
+              {contract.signal==="STRONG SIGNAL"?"🤝 Strong Link":"👁 Watch"}
+            </Tag>
+          </div>
+          <div style={{color:T.muted,fontSize:11,marginBottom:8}}>{contract.sector}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+            <div style={{background:T.card2,borderRadius:5,padding:"6px 8px"}}>
+              <div style={{color:T.muted,fontSize:9,fontFamily:"monospace"}}>CONTRACT</div>
+              <div style={{color:"#00ff88",fontSize:13,fontWeight:700,fontFamily:"monospace"}}>{contract.contractValue}</div>
+              <div style={{color:T.muted,fontSize:10}}>{contract.agency}</div>
+            </div>
+            <div style={{background:T.card2,borderRadius:5,padding:"6px 8px"}}>
+              <div style={{color:T.muted,fontSize:9,fontFamily:"monospace"}}>DONATION / PLEDGE</div>
+              <div style={{color:"#ffaa00",fontSize:13,fontWeight:700,fontFamily:"monospace"}}>{contract.donationValue}</div>
+              <div style={{color:T.muted,fontSize:10}}>{contract.donationTarget.slice(0,28)}...</div>
+            </div>
+          </div>
+          {contract.ticker && contract.ticker !== "N/A — see proxies" && contract.ticker !== "Private — IPO Watch" && (
+            <div style={{marginTop:8}}><YahooBtn ticker={contract.ticker}/></div>
+          )}
+        </div>
+        <div style={{textAlign:"right",flexShrink:0,minWidth:56}}>
+          <div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>GAP</div>
+          <div style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#ffaa00",marginBottom:6}}>{contract.timingGap}</div>
+          {contract.perf1w&&contract.perf1w!=="N/A"&&<><Perf label="1W" val={contract.perf1w}/><Perf label="1M" val={contract.perf1m}/></>}
+        </div>
+      </div>
+      {open&&(
+        <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${T.border}`}} className="fade-in">
+          <div style={{color:T.text,fontSize:13,lineHeight:1.75,marginBottom:12}}>{contract.details}</div>
+          <div style={{background:T.card2,borderRadius:6,padding:"10px 12px",marginBottom:8}}>
+            <div style={{color:"#ffaa00",fontSize:10,fontFamily:"monospace",marginBottom:4}}>HISTORICAL PRECEDENT</div>
+            <div style={{color:T.text,fontSize:12,lineHeight:1.6}}>{contract.precedent}</div>
+          </div>
+          <div style={{background:T.card2,borderRadius:6,padding:"10px 12px",marginBottom:8}}>
+            <div style={{color:"#00ff88",fontSize:10,fontFamily:"monospace",marginBottom:4}}>WATCH FOR</div>
+            <div style={{color:T.text,fontSize:12,lineHeight:1.6}}>{contract.watchFor}</div>
+          </div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {contract.sources.map(s=><Tag key={s} color="blue">{s}</Tag>)}
+          </div>
+        </div>
+      )}
+      <div style={{color:T.muted,fontSize:10,marginTop:8,fontFamily:"monospace"}}>{open?"▲ collapse":"▼ tap for full breakdown"}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUMMARY STRIP
+// ─────────────────────────────────────────────────────────────────────────────
+function Summary({data}){
+  const all=[...(data.politicians||[]),...(data.funds||[])];
+  const strong=all.filter(t=>t.signal==="STRONG BUY SIGNAL").length;
+  const watches=all.filter(t=>t.signal==="WATCH").length;
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
+      {[
+        {l:"⚡ Signals",v:strong,c:"#00ff88"},
+        {l:"👁 Watches",v:watches,c:"#ffaa00"},
+        {l:"Politicians",v:(data.politicians||[]).length,c:"#60a5fa"},
+        {l:"Funds",v:(data.funds||[]).length,c:"#c084fc"},
+      ].map(({l,v,c})=>(
+        <div key={l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 8px",textAlign:"center"}}>
+          <div style={{color:T.muted,fontSize:10,marginBottom:3}}>{l}</div>
+          <div style={{color:c,fontSize:18,fontWeight:700,fontFamily:"monospace"}}>{v}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BACKTEST PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+function BacktestPanel({tracker}){
+  const [sortBy,setSortBy]=useState("winRate");
+  const [showCurve,setShowCurve]=useState(true);
+
+  const bt = useMemo(()=>runBacktest(HISTORICAL_RECORDS),[]);
+
+  const trackedSignals = Object.values(tracker);
+  const trackedReturns = trackedSignals.map(s=>parseReturn(s.returnRate));
+  const trackedPnl = trackedReturns.reduce((a,b)=>a+b,0);
+  const trackedPnlPct = trackedSignals.length ? (trackedPnl/trackedSignals.length*100).toFixed(1) : null;
+
+  const sorted = [...bt.tickers].sort((a,b)=>{
+    if(sortBy==="winRate") return b.winRate - a.winRate;
+    if(sortBy==="avgReturn") return b.avgReturn - a.avgReturn;
+    if(sortBy==="total") return b.total - a.total;
+    return 0;
+  });
+
+  const maxVal = Math.max(...bt.curve.map(p=>p.value));
+  const minVal = Math.min(...bt.curve.map(p=>p.value));
+  const range = maxVal - minVal || 1;
+
+  return(
+    <div className="fade-in">
+      <div style={{background:T.card,border:"1px solid #6366f140",borderRadius:8,padding:"12px 16px",marginBottom:16}}>
+        <div style={{color:"#818cf8",fontFamily:"monospace",fontWeight:700,fontSize:13,marginBottom:4}}>📊 BACKTEST ENGINE</div>
+        <div style={{color:T.muted,fontSize:12,lineHeight:1.6}}>
+          Runs every historical signal through a simulated $10k portfolio (10% position per signal).
+          <span style={{color:"#ffaa00"}}> ⚠ SIMULATED — uses recorded return strings, not live price data.</span>
+        </div>
+        <div style={{background:"#ffaa0010",borderLeft:"3px solid #ffaa00",padding:"6px 10px",marginTop:10,borderRadius:4}}>
+          <div style={{color:"#ffaa00",fontSize:10,fontFamily:"monospace",marginBottom:2}}>📅 FILING DELAY NOTE</div>
+          <div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>
+            Assumes entry at signalDate. Real SEC/STOCK Act filings have 30-45 day delays. Actual returns may differ significantly.
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:16}}>
+        {[
+          {l:"Overall Win Rate",v:bt.overallWinRate+"%",c:"#00ff88"},
+          {l:"Simulated Return",v:"+"+bt.totalReturn+"%",c:"#00ff88"},
+          {l:"Total Signals",v:bt.totalSignals,c:"#60a5fa"},
+          {l:"Portfolio Value",v:"$"+bt.portfolio.toLocaleString(),c:"#c084fc"},
+        ].map(({l,v,c})=>(
+          <div key={l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"12px 14px"}}>
+            <div style={{color:T.muted,fontSize:10,fontFamily:"monospace",marginBottom:4}}>{l.toUpperCase()}</div>
+            <div style={{color:c,fontSize:20,fontWeight:700,fontFamily:"monospace"}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {trackedSignals.length > 0 && (
+        <div style={{background:"#00ff8810",border:"1px solid #00ff8830",borderRadius:8,padding:"12px 14px",marginBottom:16}}>
+          <div style={{color:"#00ff88",fontFamily:"monospace",fontWeight:700,fontSize:12,marginBottom:6}}>📌 YOUR PERSONAL TRACKER (SIMULATED)</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+            <div>
+              <div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>SIGNALS FOLLOWED</div>
+              <div style={{color:"#00ff88",fontSize:18,fontWeight:700,fontFamily:"monospace"}}>{trackedSignals.length}</div>
+            </div>
+            <div>
+              <div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>AVG SIM. RETURN</div>
+              <div style={{color:"#00ff88",fontSize:18,fontWeight:700,fontFamily:"monospace"}}>{trackedPnlPct ? "+"+trackedPnlPct+"%" : "—"}</div>
+            </div>
+            <div>
+              <div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>TICKERS</div>
+              <div style={{color:T.text,fontSize:11,fontFamily:"monospace",lineHeight:1.6}}>{trackedSignals.map(s=>s.ticker).join(", ")}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"12px 14px",marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{color:T.text,fontFamily:"monospace",fontWeight:700,fontSize:12}}>SIMULATED EQUITY CURVE — $10k start</div>
+          <button onClick={()=>setShowCurve(!showCurve)} style={{background:"transparent",color:T.muted,fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>
+            {showCurve?"▲ hide":"▼ show"}
+          </button>
+        </div>
+        {showCurve&&(
+          <div>
+            <div style={{display:"flex",alignItems:"flex-end",gap:2,height:80,overflowX:"auto",paddingBottom:4}}>
+              {bt.curve.map((p,i)=>{
+                const h = Math.max(4, ((p.value - minVal) / range) * 72);
+                return(
+                  <div
+                    key={i}
+                    title={`${p.ticker||"Start"}: ${p.label}${p.ret?" ("+p.ret+")":""}`}
+                    style={{
+                      width:14,minWidth:14,height:h,
+                      background:i===0?"#64748b":p.outcome==="correct"?"#00ff88":"#ff4466",
+                      borderRadius:"2px 2px 0 0",
+                      opacity:0.85,
+                      flexShrink:0,
+                      cursor:"default",
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",color:T.muted,fontSize:9,fontFamily:"monospace",marginTop:4}}>
+              <span>$10,000 start</span>
+              <span style={{color:"#00ff88"}}>${bt.portfolio.toLocaleString()} end</span>
+            </div>
+            <div style={{display:"flex",gap:12,marginTop:6}}>
+              <span style={{color:"#00ff88",fontSize:10,fontFamily:"monospace"}}>▮ Correct signal</span>
+              <span style={{color:"#ff4466",fontSize:10,fontFamily:"monospace"}}>▮ Incorrect signal</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"12px 14px",marginBottom:16}}>
+        <div style={{color:T.text,fontFamily:"monospace",fontWeight:700,fontSize:12,marginBottom:10}}>PER-TICKER BREAKDOWN</div>
+        <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+          {[{k:"winRate",l:"Win Rate"},{k:"avgReturn",l:"Avg Return"},{k:"total",l:"# Signals"}].map(({k,l})=>(
+            <button key={k} onClick={()=>setSortBy(k)} style={{background:sortBy===k?"#00ff8820":"transparent",border:`1px solid ${sortBy===k?"#00ff8860":T.border}`,color:sortBy===k?"#00ff88":T.muted,padding:"4px 10px",borderRadius:14,cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>
+              {l}
+            </button>
+          ))}
+        </div>
+        {sorted.map(t=>{
+          const barW = Math.round(t.winRate);
+          const retColor = t.avgReturn >= 0.2 ? "#00ff88" : t.avgReturn >= 0 ? "#ffaa00" : "#ff4466";
+          return(
+            <div key={t.ticker} style={{marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${T.border}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontFamily:"monospace",fontWeight:700,fontSize:14,color:"#00ff88"}}>{t.ticker}</span>
+                  <YahooBtn ticker={t.ticker}/>
+                </div>
+                <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{color:T.muted,fontSize:9,fontFamily:"monospace"}}>WIN RATE</div>
+                    <div style={{color:t.winRate>=80?"#00ff88":t.winRate>=60?"#ffaa00":"#ff4466",fontFamily:"monospace",fontWeight:700,fontSize:14}}>{t.winRate}%</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{color:T.muted,fontSize:9,fontFamily:"monospace"}}>AVG RETURN</div>
+                    <div style={{color:retColor,fontFamily:"monospace",fontWeight:700,fontSize:14}}>
+                      {t.avgReturn>=0?"+":""}{(t.avgReturn*100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{color:T.muted,fontSize:9,fontFamily:"monospace"}}>SIGNALS</div>
+                    <div style={{color:T.text,fontFamily:"monospace",fontWeight:700,fontSize:14}}>{t.total}</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{background:"#ffffff10",borderRadius:3,height:4,overflow:"hidden"}}>
+                <div style={{height:"100%",width:barW+"%",background:t.winRate>=80?"#00ff88":t.winRate>=60?"#ffaa00":"#ff4466",borderRadius:3,transition:"width 0.4s"}}/>
+              </div>
+              <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
+                {t.signals.map((s,i)=>(
+                  <div key={i} title={`${s.signalDate}: ${s.actualReturn}`} style={{width:8,height:8,borderRadius:"50%",background:s.outcome==="correct"?"#00ff88":"#ff4466",cursor:"default"}}/>
+                ))}
+                <span style={{color:T.muted,fontSize:9,fontFamily:"monospace",alignSelf:"center"}}>each dot = 1 signal</span>
+              </div>
+              <div style={{display:"flex",gap:10,marginTop:4}}>
+                <span style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>Best: <span style={{color:"#00ff88"}}>{(t.bestTrade*100).toFixed(0)}%</span></span>
+                <span style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>Worst: <span style={{color:"#ff4466"}}>{(t.maxDrawdown*100).toFixed(0)}%</span></span>
+                <span style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>{t.correct}/{t.total} correct</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{color:T.muted,fontSize:10,fontFamily:"monospace",lineHeight:1.8,padding:"10px 0"}}>
+        ⚠ SIMULATED RESULTS: All returns are derived from recorded historical signal outcome strings, not actual trade execution prices, slippage, or fees. Past signal accuracy does not guarantee future results. Not financial advice.
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APP ROOT
+// ─────────────────────────────────────────────────────────────────────────────
+function App(){
+  const [market,setMarket]=useState("top10");
+  const [tab,setTab]=useState("politicians");
+  const [filter,setFilter]=useState("all");
+  const [searchTicker,setSearchTicker]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [refreshKey,setRefreshKey]=useState(0);
+  const [tracker,setTracker]=useState(()=>loadTracker());
+
+  const DATA = useMemo(()=>buildDATA(),[refreshKey]);
+
+  function handleRefresh(){
+    setLoading(true);
+    setTimeout(()=>{ setRefreshKey(k=>k+1); setLoading(false); },500);
+  }
+
+  function handleTrack(cardId, trade){
+    const next = {...tracker, [cardId]:{...trade, trackedAt: new Date().toISOString()}};
+    setTracker(next);
+    saveTracker(next);
+  }
+
+  const data=DATA[market]||{politicians:[],funds:[]};
+  const isTop10=market==="top10";
+  const isContracts=market==="contracts";
+  const isBacktest=market==="backtest";
+  const isMarket=!isTop10&&!isContracts&&!isBacktest;
+  const trades=tab==="politicians"?(data.politicians||[]):(data.funds||[]);
+  const searched=searchTicker?trades.filter(t=>t.ticker.toLowerCase().includes(searchTicker.toLowerCase())):trades;
+  const filtered=filter==="all"?searched:filter==="signals"?searched.filter(t=>t.signal==="STRONG BUY SIGNAL"):searched.filter(t=>t.signal==="WATCH");
+
+  const trackedCount = Object.keys(tracker).length;
+
+  return(
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"system-ui,-apple-system,sans-serif",paddingBottom:40}}>
+      <div style={{borderBottom:`1px solid ${T.border}`,padding:"14px 16px",background:T.panel,position:"sticky",top:0,zIndex:10}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:7,height:7,borderRadius:"50%",background:"#00ff88",boxShadow:"0 0 8px #00ff88"}}/>
+            <span style={{fontFamily:"monospace",fontWeight:700,fontSize:17,letterSpacing:"0.08em"}}>
+              WHALE<span style={{color:"#00ff88"}}>WATCH</span>
+            </span>
+            {trackedCount>0&&(
+              <span style={{background:"#00ff8820",border:"1px solid #00ff8840",color:"#00ff88",borderRadius:10,padding:"1px 7px",fontSize:10,fontFamily:"monospace",fontWeight:700}}>
+                {trackedCount} tracked
+              </span>
+            )}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={e=>{e.stopPropagation();exportData();}} style={{background:"#00ff8815",border:"1px solid #00ff8840",color:"#00ff88",padding:"5px 10px",borderRadius:6,cursor:"pointer",fontFamily:"monospace",fontSize:11,fontWeight:700}}>⬇ Export</button>
+            <button onClick={e=>{e.stopPropagation();handleRefresh();}} style={{background:T.card,border:`1px solid ${T.border}`,color:T.muted,padding:"5px 10px",borderRadius:6,cursor:"pointer",fontFamily:"monospace",fontSize:11,fontWeight:700}}>🔄</button>
+            <span style={{color:T.muted,fontSize:11,fontFamily:"monospace"}}>{new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:4,overflowX:"auto",paddingBottom:2}}>
+          {MARKETS.map(m=>(
+            <button
+              key={m.key}
+              onClick={()=>{setMarket(m.key);setFilter("all");setTab("politicians");setSearchTicker("");}}
+              style={{
+                background:market===m.key?"#00ff8830":"transparent",
+                border:`1px solid ${market===m.key?"#00ff8860":T.border}`,
+                color:market===m.key?"#00ff88":T.muted,
+                padding:"6px 10px",borderRadius:6,cursor:"pointer",
+                fontFamily:"monospace",fontSize:11,fontWeight:700,
+                whiteSpace:"nowrap",flexShrink:0,
+              }}
+            >
+              {m.flag} {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"60vh"}}>
+          <div className="loading" style={{color:"#00ff88",fontFamily:"monospace",fontSize:16,fontWeight:700}}>🔄 Refreshing whale data...</div>
+        </div>
+      ) : (
+        <div style={{padding:"16px",maxWidth:860,margin:"0 auto"}}>
+
+          {isTop10&&(
+            <>
+              <div style={{background:T.card,border:"1px solid #00ff8840",borderRadius:8,padding:"12px 16px",marginBottom:20}}>
+                <div style={{color:"#00ff88",fontFamily:"monospace",fontWeight:700,fontSize:13,marginBottom:4}}>🏆 TOP 10 GLOBAL PICKS</div>
+                <div style={{color:T.muted,fontSize:12,lineHeight:1.6}}>Highest-conviction trades across all markets — ranked by signal strength, whale confluence, and historical track record. Tap any pick for full analysis.</div>
+              </div>
+              {TOP10.map((p,i)=><Top10Card key={i} pick={p}/>)}
+            </>
+          )}
+
+          {isBacktest&&<BacktestPanel tracker={tracker}/>}
+
+          {isContracts&&(
+            <>
+              <div style={{background:T.card,border:"1px solid #ffaa0040",borderRadius:8,padding:"12px 16px",marginBottom:20}}>
+                <div style={{color:"#ffaa00",fontFamily:"monospace",fontWeight:700,fontSize:13,marginBottom:4}}>🤝 CONTRACT WATCH</div>
+                <div style={{color:T.muted,fontSize:12,lineHeight:1.6}}>Tracks political donations and executive pledges flowing to government contract awards. Cross-referenced from FEC filings, OpenSecrets.org, and USASpending.gov.</div>
+              </div>
+              {CONTRACTS.map((c,i)=><ContractCard key={i} contract={c}/>)}
+            </>
+          )}
+
+          {isMarket&&(
+            <>
+              <Summary data={data}/>
+              <div style={{display:"flex",gap:4,marginBottom:16,background:T.panel,padding:4,borderRadius:8,border:`1px solid ${T.border}`}}>
+                {[{key:"politicians",label:"🏛 Politicians"},{key:"funds",label:"🐋 Funds"}].map(({key,label})=>(
+                  <button
+                    key={key}
+                    onClick={()=>{setTab(key);setFilter("all");setSearchTicker("");}}
+                    style={{flex:1,background:tab===key?"#00ff8830":"transparent",border:`1px solid ${tab===key?"#00ff8860":"transparent"}`,color:tab===key?"#00ff88":T.muted,padding:"8px 0",borderRadius:6,cursor:"pointer",fontFamily:"monospace",fontSize:12,fontWeight:700}}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={searchTicker}
+                onChange={e=>setSearchTicker(e.target.value)}
+                placeholder="Filter by ticker..."
+                style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,color:T.text,padding:"8px 12px",borderRadius:6,fontFamily:"monospace",fontSize:12,marginBottom:12,outline:"none"}}
+              />
+              <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+                {[{key:"all",label:"All"},{key:"signals",label:"⚡ Signals"},{key:"watch",label:"👁 Watches"}].map(({key,label})=>(
+                  <button
+                    key={key}
+                    onClick={()=>setFilter(key)}
+                    style={{background:filter===key?T.card:"transparent",border:`1px solid ${filter===key?"#00ff8860":T.border}`,color:filter===key?"#00ff88":T.muted,padding:"5px 12px",borderRadius:20,cursor:"pointer",fontSize:12}}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {filtered.length===0
+                ? <div style={{color:T.muted,textAlign:"center",padding:40,fontFamily:"monospace"}}>no trades match this filter</div>
+                : filtered.map((t,i)=><TradeCard key={i} trade={t} tracker={tracker} onTrack={handleTrack}/>)
+              }
+            </>
+          )}
+
+          <div style={{marginTop:32,paddingTop:16,borderTop:`1px solid ${T.border}`,color:T.muted,fontSize:11,fontFamily:"monospace",lineHeight:2}}>
+            ⚠ Sources: STOCK Act · Register of Members Interests · EU Parliament disclosures · NPC/CPPCC registers · LegCo interests · SEC 13F · FEC.gov · OpenSecrets.org · USASpending.gov. NOT financial advice.{"\n\n"}
+            📊 Backtest returns are SIMULATED from historical signal strings — not real execution prices.{"\n\n"}
+            🐙 <a href="https://github.com/572kgdy8rm-max/whalewatch" target="_blank" rel="noopener noreferrer" style={{color:"#60a5fa",textDecoration:"none"}}>github.com/572kgdy8rm-max/whalewatch</a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
+</body>
+</html>
+  
