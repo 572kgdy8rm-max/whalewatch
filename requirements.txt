@@ -1,6 +1,5 @@
 fastapi
-uvicorn
-httpx
+uvicorn[standard]
 yfinance
-numpy
 pandas
+numpy
