@@ -6,32 +6,24 @@ import math
 
 app = FastAPI()
 
-# Allow your frontend to talk to this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development; restrict later if needed
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ============================================================
-# WILSON SCORE (Quant Genius Rating Engine)
-# ============================================================
 def wilson_lower_bound(win_rate, total_trades):
     if total_trades == 0:
         return 0
     p = win_rate / 100
     n = total_trades
-    z = 1.96  # 95% confidence
+    z = 1.96
     lower = (p + (z*z)/(2*n) - z * math.sqrt((p*(1-p) + (z*z)/(4*n))/n)) / (1 + (z*z)/n)
     return max(0, lower) * 100
 
-# ============================================================
-# CALCULATE STATS FROM YAHOO FINANCE
-# ============================================================
 def calculate_stats(ticker):
-    """Calculate Wilson score, excess returns, and drawdown from Yahoo data."""
     try:
         stock = yf.Ticker(ticker)
         hist = stock.history(period="2y")
@@ -90,42 +82,31 @@ def calculate_stats(ticker):
             "wilson_score": round(wilson, 1),
         }
     except Exception as e:
-        print(f"Error calculating {ticker}: {e}")
+        print(f"Error: {e}")
         return None
 
-# ============================================================
-# API ENDPOINTS
-# ============================================================
 @app.get("/")
 def root():
     return {"message": "WhaleWatch API Live", "time": datetime.now().isoformat()}
 
 @app.get("/v1/signal/{ticker}")
-async def get_signal(ticker):
-    """Calculate Genius Rating for a specific ticker."""
+def get_signal(ticker):
     ticker = ticker.upper()
     result = calculate_stats(ticker)
     if not result:
         raise HTTPException(status_code=404, detail=f"No data for {ticker}")
-    return {**result, "timestamp": datetime.now().isoformat()}
+    return result
 
 @app.get("/v1/top10")
-async def get_top10():
-    """Generate a dynamic Top 10 list based on the Wilson score."""
-    DEFAULT_TICKERS = ["NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "LMT", "AVGO", "TSM"]
+def get_top10():
+    tickers = ["NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "LMT", "AVGO", "TSM"]
     results = []
-    for ticker in DEFAULT_TICKERS:
+    for ticker in tickers:
         stats = calculate_stats(ticker)
         if stats:
             results.append(stats)
-
-    # Sort by the calculated Wilson score
     results.sort(key=lambda x: x.get('wilson_score', 0), reverse=True)
-    top10 = results[:10]
-
     return {
-        "top_10": top10,
-        "last_updated": datetime.now().isoformat(),
-        "total_tickers": len(results),
-        "source": "live_calculation",
+        "top_10": results[:10],
+        "last_updated": datetime.now().isoformat()
     }
