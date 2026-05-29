@@ -1,0 +1,34 @@
+name: Update WhaleWatch Signals
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Runs daily at 8 AM UTC (4 AM EST)
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas numpy requests
+      
+      - name: Run update script
+        run: python scripts/update_data.py
+      
+      - name: Commit and push if changed
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add data/signals.json
+          git diff --staged --quiet || git commit -m "🤖 Auto-update signal data $(date +'%Y-%m-%d')"
+          git push
