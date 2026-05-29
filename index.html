@@ -448,7 +448,9 @@ function TradeCard({trade, tracker, onTrack}){
             <Tag color={trade.signal==="STRONG BUY SIGNAL"?"green":trade.signal==="WATCH"?"yellow":"blue"}>
               {trade.signal==="STRONG BUY SIGNAL"?"⚡ Signal":trade.signal}
             </Tag>
-            {daysAgo&&<span style={{background:"#ffffff08",border:"1px solid #ffffff18",color:T.muted,padding:"2px 6px",borderRadius:4,fontSize:10,fontFamily:"monospace"}}>{daysAgo}</span>}
+            {daysAgo&&<span style={{background:"#ffffff08",border:"1px solid #ffffff18"
+              {getHistoricalAccuracy(trade.ticker) && <GeniusBadge ticker={trade.ticker} winRate={getHistoricalAccuracy(trade.ticker).pct} totalTrades={getHistoricalAccuracy(trade.ticker).total} personalReturn={null} />}
+              ,color:T.muted,padding:"2px 6px",borderRadius:4,fontSize:10,fontFamily:"monospace"}}>{daysAgo}</span>}
           </div>
           <div style={{color:T.text,fontSize:13,marginBottom:3,fontWeight:600}}>{trade.trader}</div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:6}}>
