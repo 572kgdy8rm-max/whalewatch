@@ -455,6 +455,7 @@ function TradeCard({trade, tracker, onTrack}){
           <div style={{color:T.text,fontSize:13,marginBottom:3,fontWeight:600}}>{trade.trader}</div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:6}}>
             <span style={{color:T.muted,fontSize:11}}>{trade.sector}</span>
+            {getHistoricalAccuracy(pick.ticker) && <GeniusBadge ticker={pick.ticker} winRate={getHistoricalAccuracy(pick.ticker).pct} totalTrades={getHistoricalAccuracy(pick.ticker).total} personalReturn={null} />}
             <RiskDot risk={trade.risk}/>
           </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
@@ -685,14 +686,19 @@ function BacktestPanel({tracker}){
 
   return(
     <div className="fade-in">
-      {/* Header */}
-      <div style={{background:T.card,border:"1px solid #6366f140",borderRadius:8,padding:"12px 16px",marginBottom:16}}>
-        <div style={{color:"#818cf8",fontFamily:"monospace",fontWeight:700,fontSize:13,marginBottom:4}}>📊 BACKTEST ENGINE</div>
-        <div style={{color:T.muted,fontSize:12,lineHeight:1.6}}>
-          Runs every historical signal through a simulated $10k portfolio (10% position per signal).
-          <span style={{color:"#ffaa00"}}> ⚠ SIMULATED — uses recorded return strings, not live price data.</span>
-        </div>
-      </div>
+<div style={{background:T.card,border:"1px solid #6366f140",borderRadius:8,padding:"12px 16px",marginBottom:16}}>
+  <div style={{color:"#818cf8",fontFamily:"monospace",fontWeight:700,fontSize:13,marginBottom:4}}>📊 BACKTEST ENGINE</div>
+  <div style={{color:T.muted,fontSize:12,lineHeight:1.6}}>
+    Runs every historical signal through a simulated $10k portfolio (10% position per signal).
+    <span style={{color:"#ffaa00"}}> ⚠ SIMULATED — uses recorded return strings, not live price data.</span>
+  </div>
+  <div style={{background:"#ffaa0010",borderLeft:"3px solid #ffaa00",padding:"6px 10px",marginTop:10,borderRadius:4}}>
+    <div style={{color:"#ffaa00",fontSize:10,fontFamily:"monospace",marginBottom:2}}>📅 FILING DELAY NOTE</div>
+    <div style={{color:T.muted,fontSize:10,fontFamily:"monospace"}}>
+      Assumes entry at signalDate. Real SEC/STOCK Act filings have 30-45 day delays. Actual returns may differ significantly.
+    </div>
+  </div>
+</div>
 
       {/* Portfolio summary stats */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:16}}>
