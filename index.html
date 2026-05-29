@@ -40,6 +40,29 @@ const T = {
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 function daysSince(dateStr) {
+  // ─────────────────────────────────────────────────────────────────────────────
+// GENIUS RATING
+// ─────────────────────────────────────────────────────────────────────────────
+function getGeniusRating(ticker, winRate, totalTrades, personalReturn = null) {
+  let score = 0;
+  if (totalTrades >= 20) score += 2;
+  else if (totalTrades >= 10) score += 1;
+  else if (totalTrades >= 5) score += 0.5;
+  if (winRate >= 85) score += 3;
+  else if (winRate >= 75) score += 2;
+  else if (winRate >= 65) score += 1;
+  else if (winRate >= 55) score += 0.5;
+  if (personalReturn !== null) {
+    if (personalReturn >= 0.30) score += 2;
+    else if (personalReturn >= 0.15) score += 1;
+    else if (personalReturn >= 0.05) score += 0.5;
+    else if (personalReturn < -0.10) score -= 1;
+  }
+  if (score >= 5) return { label: "🔥 TOP", color: "#ff4466", bg: "#ff446620", border: "#ff446660", description: "Elite signal" };
+  if (score >= 3.5) return { label: "✅ GOOD", color: "#00ff88", bg: "#00ff8820", border: "#00ff8860", description: "Strong signal" };
+  if (score >= 2) return { label: "⚠️ SMALL", color: "#ffaa00", bg: "#ffaa0020", border: "#ffaa0060", description: "Low conviction" };
+  return { label: "❌ AVOID", color: "#64748b", bg: "#ffffff08", border: "#ffffff18", description: "Weak signal" };
+}
   const now = new Date();
   const past = new Date(dateStr);
   if (isNaN(past)) return "";
