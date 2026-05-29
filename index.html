@@ -350,6 +350,14 @@ function Tag({color,children}){
 }
 
 function RiskDot({risk}){
+  function GeniusBadge({ ticker, winRate, totalTrades, personalReturn }) {
+  const rating = getGeniusRating(ticker, winRate, totalTrades, personalReturn);
+  return (
+    <span title={rating.description} style={{background: rating.bg, border: `1px solid ${rating.border}`, color: rating.color, padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 800, fontFamily: "monospace", whiteSpace: "nowrap", cursor: "help"}}>
+      {rating.label}
+    </span>
+  );
+}
   const color=risk==="Low"?"#00ff88":risk==="Medium"?"#ffaa00":risk?.startsWith("Medium-High")?"#ff8844":"#ff4466";
   return <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,color}}><span style={{width:6,height:6,borderRadius:"50%",background:color,display:"inline-block"}}/>{risk}</span>;
 }
@@ -360,6 +368,24 @@ function Perf({label,val}){
 }
 
 function AccuracyBadge({ticker}){
+  function AccuracyBadge({ ticker }) {
+  const acc = getHistoricalAccuracy(ticker);
+  if (!acc) return null;
+  const color = acc.pct >= 80 ? "#00ff88" : acc.pct >= 60 ? "#ffaa00" : "#ff4466";
+  const isLowSample = acc.total < 10;
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{background: "#ffffff08", border: `1px solid ${color}40`, color: color, padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 700, fontFamily: "monospace"}}>
+        {acc.pct}% accurate ({acc.correct}/{acc.total})
+      </span>
+      {isLowSample && (
+        <span style={{background: "#ffaa0010", border: "1px solid #ffaa0040", color: "#ffaa00", padding: "2px 7px", borderRadius: 10, fontSize: 10, fontWeight: 600, fontFamily: "monospace"}}>
+          ⚠️ low sample
+        </span>
+      )}
+    </div>
+  );
+}
   const acc = getHistoricalAccuracy(ticker);
   if (!acc) return null;
   const color = acc.pct >= 80 ? "#00ff88" : acc.pct >= 60 ? "#ffaa00" : "#ff4466";
